@@ -1,0 +1,14 @@
+{
+    "id": "",
+    "name": "",
+    "description": "",
+    "traits": [],
+    "stats": {
+        "health": 0,
+        "stamina": 0,
+        "mind": 0
+    },
+    "biomes": [],
+    "factions": [],
+    "lore": ""
+}

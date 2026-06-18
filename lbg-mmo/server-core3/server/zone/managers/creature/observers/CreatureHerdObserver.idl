@@ -1,0 +1,54 @@
+package server.zone.managers.creature.observers;
+
+import engine.core.ManagedObject;
+import engine.util.Observer;
+import server.zone.objects.creature.ai.AiAgent;
+include engine.util.u3d.Vector3;
+include system.util.Vector;
+include system.thread.Mutex;
+
+class CreatureHerdObserver extends Observer {
+	@local
+	@dereferenced
+	protected Vector<AiAgent> herdMembers;
+
+	@dereferenced
+	protected transient Mutex herdLock;
+
+	protected float spacingBuffer;
+	protected float maxJitterPercent;
+
+	public CreatureHerdObserver() {
+		super();
+		spacingBuffer = 4.0f;
+		maxJitterPercent = 0.1f;
+	}
+
+	@local
+	public native void addMember(AiAgent member);
+
+	@local
+	public native void removeMember(AiAgent member);
+
+	@local
+	public native AiAgent getMember(int index);
+
+	@local
+	public native int getMemberPosition(unsigned long memberID);
+
+	public native AiAgent getHerdLeader();
+
+	@local
+	public native void despawnHerd();
+
+	public native boolean restHerd();
+	public native boolean stopHerdRest();
+
+	@local
+	@dereferenced
+	public native Vector3 getFormationOffset(int positionIndex, float followerRadius, float leaderRadius);
+
+	@local
+	@dereferenced
+	public native Vector3 getFormationWorldPosition(AiAgent member);
+}

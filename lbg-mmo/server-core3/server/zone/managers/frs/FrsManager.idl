@@ -1,0 +1,49 @@
+package server.zone.managers.frs;
+
+import engine.core.ManagedService;
+import engine.log.Logger;
+import server.zone.objects.creature.CreatureObject;
+import server.zone.ZoneServer;
+include server.zone.objects.tangible.threat.ThreatMap;
+
+class FrsManager extends ManagedService implements Logger {
+	public static final short COUNCIL_LIGHT = 1;
+	public static final short COUNCIL_DARK = 2;
+
+	public static final int ARENA_CELL = 3435643;
+
+	public FrsManager(ZoneServer zserv) {
+		super();
+	}
+
+	public void initialize() { }
+	public void stop() { }
+
+	public void sendRankPlayerList(CreatureObject player, int councilType, int rank) { }
+
+	public boolean isFrsEnabled() { return false; }
+	public void adjustFrsExperience(CreatureObject player, int amount, boolean sendSystemMessage = true) { }
+
+	public int calculatePvpExperienceChange(CreatureObject attacker, CreatureObject victim, float contribution, boolean isVictim) { return 0; }
+
+	public boolean isValidFrsBattle(CreatureObject attacker, CreatureObject victim) { return false; }
+
+	@local
+	public void handleSuddenDeathLoss(CreatureObject player, ThreatMap threatMap) { }
+
+	public boolean handleDarkCouncilDeath(CreatureObject killer, CreatureObject victim, boolean forfeit = false) { return false; }
+
+	public boolean handleDarkCouncilIncap(CreatureObject killer, CreatureObject victim) { return false; }
+
+	public void handleSkillRevoked(CreatureObject player, final string skillName) { }
+
+	public boolean isPlayerFightingInArena(unsigned long playerID) { return false; }
+
+	public void handleLeftArena(CreatureObject player) { }
+
+	public boolean isPlayerInEnclave(CreatureObject player) { return false; }
+
+	public void setPlayerRank(CreatureObject player, int rank) { }
+
+	public void playerLoggedIn(CreatureObject player) { }
+}

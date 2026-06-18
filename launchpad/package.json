@@ -1,0 +1,38 @@
+{
+  "name": "lbg-mmo-launchpad",
+  "version": "2.0.5",
+  "description": "Custom Launchpad for LBG MMO",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win dir",
+    "build:win:portable": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.lbgmmo.launchpad",
+    "productName": "LBG Launchpad",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "src/**/*",
+      "launchpad.config.json"
+    ],
+    "extraFiles": [
+      {
+        "from": "launchpad.config.json",
+        "to": "."
+      }
+    ],
+    "win": {
+      "target": ["dir"]
+    }
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
+    "vite": "^5.0.0"
+  }
+}

@@ -1,0 +1,74 @@
+# =============================================================================
+# new_mmo — dépôt LBG (Core3 PreCU + Prime Antigravity + Launchpad)
+# Ne pas versionner : builds, binaires, client SWG, clones de référence.
+# =============================================================================
+
+# Clone SWGEmu officiel (référence locale — utiliser lbg-mmo/ en prod)
+/Core3/
+
+# Client SWG complet (.tre, assets — plusieurs Go)
+/StarWarsGalaxies/
+/SWGEmu Launchpad/
+
+/lbg-mmo/MMOEngine/build/
+/lbg-mmo/MMOEngine/bin/
+/lbg-mmo/MMOEngine/lib/
+
+# Sauvegarde du .git imbriqué (ne pas versionner)
+/lbg-mmo/Core3/.git.swgemu-upstream.bak/
+
+# Fichiers Windows parasites (WSL / copie depuis NTFS)
+*Zone.Identifier
+
+# --- lbg-mmo : artefacts de compilation et runtime ---
+/lbg-mmo/build/
+/lbg-mmo/bin/
+/lbg-mmo/engine3/
+/lbg-mmo/archives_swg/
+
+/lbg-mmo/Core3/MMOCoreORB/build/
+/lbg-mmo/Core3/MMOCoreORB/bin/
+/lbg-mmo/server-core3/build/
+/lbg-mmo/MMOEngine/build/
+
+# Secrets runtime (sur VM uniquement)
+**/config-local.lua
+**/.env-core3client*
+**/.env*
+
+# Bases Berkeley DB locales
+**/databases/
+**/log/
+*.log
+*.tre
+# Binaires runtime (dans bin/ — dossier déjà ignoré ; filet de sécurité)
+/lbg-mmo/Core3/MMOCoreORB/bin/core3
+/lbg-mmo/Core3/MMOCoreORB/bin/core3-clean
+/lbg-mmo/Core3/MMOCoreORB/bin/core3client
+/lbg-mmo/Core3/MMOCoreORB/bin/core3_new
+/lbg-mmo/bin/core3
+
+# --- Launchpad Electron ---
+/launchpad/node_modules/
+/launchpad/dist/
+/launchpad/test_game_dir/
+/launchpad/dummy-patch-server/
+
+# --- Modding : workspaces lourds ---
+/modding_tools/patch_fr_workspace/
+/modding_tools/SIE/
+/modding_tools/__pycache__/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

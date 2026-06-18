@@ -1,0 +1,21 @@
+package server.zone.managers.jedi;
+
+import engine.core.ManagedObject;
+import server.zone.ZoneServer;
+
+class JediManager extends ManagedObject {
+	public JediManager() {
+		super();
+	}
+
+    public JediManager(ZoneServer server) {
+        super();
+    }
+
+	@local
+	public void loadConfiguration(unsigned long luaEngine) { }
+
+    public void initialize() { }
+    public void start() { }
+    public void stop() { }
+}

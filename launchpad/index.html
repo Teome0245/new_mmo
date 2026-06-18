@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>LBG MMO Launchpad</title>
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <div class="titlebar">
+    <div class="drag-region">LBG MMO</div>
+    <div class="window-controls">
+      <button id="min-btn">−</button>
+      <button id="close-btn">×</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <header>
+      <h1 class="game-title">NOUVEL UNIVERS</h1>
+      <div id="disk-warning" class="disk-warning" role="status"></div>
+      <div id="servers-status" class="servers-status"></div>
+    </header>
+
+    <main>
+      <div class="news-panel">
+        <h2>Clients dual PreCu / Prime</h2>
+        <p>Deux installations complètes (~15–20 Go chacune). PreCu utilise <strong>SWGEmu.exe</strong> ; Prime utilise <strong>lbgemu.exe</strong>. Les chemins changent selon la galaxie sélectionnée.</p>
+      </div>
+
+      <div class="action-panel">
+        <div class="settings">
+          <label>Galaxie
+            <select id="server-select"></select>
+          </label>
+          <p id="active-profile-label" class="profile-label"></p>
+          <label>
+            <input type="checkbox" id="keep-open-cb">
+            Garder en arrière-plan
+          </label>
+          <button id="update-btn" class="secondary-btn">Vérifier Mises à Jour</button>
+        </div>
+
+        <details class="path-settings" id="path-settings">
+          <summary>Emplacement du client (profil actif)</summary>
+          <div class="path-row">
+            <label for="game-dir-input">Dossier jeu</label>
+            <input type="text" id="game-dir-input" readonly placeholder="Dossier swgemu.cfg">
+            <button type="button" id="browse-dir-btn" class="secondary-btn small-btn">Parcourir</button>
+          </div>
+          <div class="path-row">
+            <label for="game-exe-input" id="game-exe-label">Exécutable</label>
+            <input type="text" id="game-exe-input" readonly placeholder="SWGEmu.exe ou lbgemu.exe">
+            <button type="button" id="browse-exe-btn" class="secondary-btn small-btn">Parcourir</button>
+          </div>
+          <button type="button" id="save-paths-btn" class="secondary-btn">Enregistrer les chemins</button>
+          <p id="path-settings-hint" class="path-hint"></p>
+        </details>
+        
+        <div class="progress-container" id="progress-container" style="display: none;">
+          <div class="progress-bar" id="progress-bar"></div>
+          <div class="progress-text" id="progress-text">0%</div>
+        </div>
+
+        <button id="play-btn">JOUER</button>
+        <p id="status-message"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="src/renderer.js"></script>
+</body>
+</html>

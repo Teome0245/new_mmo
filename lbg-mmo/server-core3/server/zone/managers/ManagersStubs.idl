@@ -1,0 +1,7 @@
+package server.zone.managers;
+
+import engine.core.ManagedService;
+
+class ManagersStubs extends ManagedService {
+    public ManagersStubs() { }
+}

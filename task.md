@@ -1,0 +1,32 @@
+- [x] Récupérer l'historique de la session du 14 mai (ID 2890259b)
+- [x] Créer le plan d'implémentation pour le projet new_mmo
+- [x] Traduire le message d'accueil dans `motd.txt`
+- [x] Traduire "Release Documents" dans `tutorialMissionGiverConvoHandler.lua`
+- [x] Développer les scripts de traduction automatique avec protection des balises de jeu
+- [x] Traduire en masse `ui_auc.stf`, `live_motd.stf` et `test_motd.stf` sous WSL
+- [x] Installer et configurer Rust/Cargo stable et compiler l'outil CLI native `swg` sous WSL
+- [x] Assembler l'archive finale `patch_fr_00.tre` avec `swg tre merge` et la valider
+- [x] Développer l'outil Rust `extract_all_stf` pour extraire tous les fichiers .stf actifs du client
+- [x] Extraire et catégoriser 2 380 fichiers .stf uniques depuis les .tre d'origine
+- [x] Concevoir et exécuter le script de traduction par lots (`translate_ui_world.py`) pour 87 fichiers clés (UI et Monde)
+- [x] Compiler automatiquement le nouveau package `patch_fr_00.tre`
+- [x] Déployer `patch_fr_00.tre` dans le répertoire client `J:\swgemu\StarWarsGalaxies`
+- [x] Configurer `swgemu_live.cfg` pour charger le patch de traduction en priorité maximale (27)
+- [x] Résoudre la limite maxSearchPriority en la remettant à 26 avec le slot 25 partagé
+- [x] Renommer le dossier local `string/en` sur disque en `en_backup` pour éviter les conflits de priorité
+- [x] Développer le script de traduction global `translate_all.py`
+- [x] Traduire en masse les 2 291 fichiers STF restants
+- [x] Recompiler l'archive `patch_fr_00.tre` et la déployer
+- [x] Résoudre le problème du launcher qui réécrit ou ignore swgemu_live.cfg
+- [x] Corriger maxSearchPriority à 26 et configurer searchTree_00_25/searchTree_01_25 pour patch_fr_00.tre
+- [x] Copier les fichiers de traduction locaux (live_motd.stf, test_motd.stf, ui_auc.stf) dans string/en et les verrouiller en lecture seule
+- [x] Vérifier que les chaînes d'interface utilisateur clés sont bien traduites dans ui.stf
+- [x] Résoudre le problème de fermeture/lancement du launcher personnalisé
+    - [x] Modifier `main.js` du launcher pour utiliser PowerShell et fermer proprement
+    - [x] Compiler le launcher via `npm run build:win` sous WSL
+    - [x] Copier le livrable mis à jour vers `J:\swgemu\dist`
+    - [x] Revenir en arrière sur les modifications du launcher suite au non-lancement
+    - [x] Supprimer le verrouillage en lecture seule des fichiers locaux pour éviter les blocages de scan
+    - [x] Recompiler le fichier `patch_fr_00.tre` avec les traductions sous la locale `fr` (français) officielle
+    - [x] Modifier `user.cfg` et `options.cfg` pour forcer `defaultLocale=fr` et `fontLocale=en`
+    - [x] Tester et valider le fonctionnement en français via le launcher

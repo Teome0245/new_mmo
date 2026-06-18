@@ -1,0 +1,23 @@
+package server.zone.managers.holocron;
+
+import engine.core.ManagedObject;
+import server.zone.ZoneClientSession;
+import server.zone.ZoneProcessServer;
+include server.zone.managers.holocron.BugCategory;
+
+class HolocronManager extends ManagedObject {
+	public HolocronManager() {
+		super();
+	}
+
+	public HolocronManager(ZoneProcessServer server) {
+		super();
+	}
+
+	public void submitTicket(ZoneClientSession client, @dereferenced unicode ticketBody) { }
+	public void sendRequestCategoriesResponseTo(ZoneClientSession client) { }
+
+    public void initialize() { }
+    public void start() { }
+    public void stop() { }
+}
