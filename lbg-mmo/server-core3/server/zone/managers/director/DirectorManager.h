@@ -231,6 +231,17 @@ namespace server {
 		// IA Bridge: performances (danse/flourish) sans client slash.
 		static int iaStartDance(lua_State* L);
 		static int iaFlourish(lua_State* L);
+		static int iaJoinGroup(lua_State* L);
+		static int iaInviteToGroup(lua_State* L);
+		static int iaBeginTrade(lua_State* L);
+		static int iaGetTradeTargetOID(lua_State* L);
+		static int iaVerifyTrade(lua_State* L);
+		static int iaHasActiveTrade(lua_State* L);
+		static int iaHasVerifiedTrade(lua_State* L);
+		static int iaGetTradePartnerMoney(lua_State* L);
+		static int iaGetTradePartnerItemCount(lua_State* L);
+		static int iaTradePartnerVerified(lua_State* L);
+		static int iaGiveResourceSample(lua_State* L);
 		static int iaApplyPilotHeight(lua_State* L);
 		static int iaSetPlayerHeight(lua_State* L);
 		static int sendMail(lua_State* L);

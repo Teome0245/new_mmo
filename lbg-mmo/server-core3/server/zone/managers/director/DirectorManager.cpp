@@ -18,8 +18,11 @@
 #include "server/zone/objects/player/LuaPlayerObject.h"
 #include "server/zone/objects/creature/CreatureObject.h"
 #include "server/zone/objects/player/sessions/EntertainingSession.h"
+#include "server/zone/objects/player/sessions/TradeSession.h"
 #include "server/zone/managers/skill/SkillManager.h"
 #include "server/zone/managers/skill/PerformanceManager.h"
+#include "server/zone/managers/group/GroupManager.h"
+#include "server/zone/packets/trade/BeginTradeMessage.h"
 #include "server/zone/objects/tangible/LuaTangibleObject.h"
 #include "server/zone/objects/region/LuaCityRegion.h"
 #include "server/zone/packets/cell/UpdateCellPermissionsMessage.h"
@@ -556,6 +559,17 @@ void DirectorManager::initializeLuaEngine(Lua* luaEngine) {
 	luaEngine->registerFunction("iaPollWorldEvent", iaPollWorldEvent);
 	luaEngine->registerFunction("iaStartDance", iaStartDance);
 	luaEngine->registerFunction("iaFlourish", iaFlourish);
+	luaEngine->registerFunction("iaJoinGroup", iaJoinGroup);
+	luaEngine->registerFunction("iaInviteToGroup", iaInviteToGroup);
+	luaEngine->registerFunction("iaBeginTrade", iaBeginTrade);
+	luaEngine->registerFunction("iaGetTradeTargetOID", iaGetTradeTargetOID);
+	luaEngine->registerFunction("iaVerifyTrade", iaVerifyTrade);
+	luaEngine->registerFunction("iaHasActiveTrade", iaHasActiveTrade);
+	luaEngine->registerFunction("iaHasVerifiedTrade", iaHasVerifiedTrade);
+	luaEngine->registerFunction("iaGetTradePartnerMoney", iaGetTradePartnerMoney);
+	luaEngine->registerFunction("iaGetTradePartnerItemCount", iaGetTradePartnerItemCount);
+	luaEngine->registerFunction("iaTradePartnerVerified", iaTradePartnerVerified);
+	luaEngine->registerFunction("iaGiveResourceSample", iaGiveResourceSample);
 	luaEngine->registerFunction("iaApplyPilotHeight", iaApplyPilotHeight);
 	luaEngine->registerFunction("iaSetPlayerHeight", iaApplyPilotHeight);
 	luaEngine->registerFunction("sendMail", sendMail);
@@ -4312,6 +4326,471 @@ int DirectorManager::iaFlourish(lua_State* L) {
 
 	session->doFlourish(flourishNumber, false);
 	return 0;
+}
+
+int DirectorManager::iaJoinGroup(lua_State* L) {
+	if (checkArgumentCount(L, 1) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaJoinGroup";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* creature = (CreatureObject*)lua_touserdata(L, -1);
+
+	if (creature == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	if (creature->isGrouped()) {
+		lua_pushboolean(L, 1);
+		return 1;
+	}
+
+	uint64 inviterID = creature->getGroupInviterID();
+
+	if (inviterID == 0) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	GroupManager* groupManager = GroupManager::instance();
+
+	if (groupManager == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	groupManager->joinGroup(creature);
+	lua_pushboolean(L, creature->isGrouped() ? 1 : 0);
+	return 1;
+}
+
+int DirectorManager::iaInviteToGroup(lua_State* L) {
+	if (checkArgumentCount(L, 2) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaInviteToGroup";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* inviter = (CreatureObject*)lua_touserdata(L, -2);
+	CreatureObject* target = (CreatureObject*)lua_touserdata(L, -1);
+
+	if (inviter == nullptr || target == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	GroupManager* groupManager = GroupManager::instance();
+
+	if (groupManager == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	groupManager->inviteToGroup(inviter, target);
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
+int DirectorManager::iaGetTradeTargetOID(lua_State* L) {
+	if (checkArgumentCount(L, 1) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaGetTradeTargetOID";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* creature = (CreatureObject*)lua_touserdata(L, -1);
+
+	if (creature == nullptr) {
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+
+	lua_pushinteger(L, (lua_Integer)creature->getTradeTargetID());
+	return 1;
+}
+
+int DirectorManager::iaBeginTrade(lua_State* L) {
+	if (checkArgumentCount(L, 2) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaBeginTrade";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* player = (CreatureObject*)lua_touserdata(L, -2);
+	CreatureObject* targetPlayer = (CreatureObject*)lua_touserdata(L, -1);
+
+	if (player == nullptr || targetPlayer == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	if (player->isInCombat() || targetPlayer->isInCombat()) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	if (player->getDistanceTo(targetPlayer) >= 15.f) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	uint64 playerID = player->getObjectID();
+	uint64 targetID = targetPlayer->getObjectID();
+
+	if (playerID == targetID) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	Locker clocker(targetPlayer, player);
+
+	player->setTradeTargetID(targetID);
+	targetPlayer->setTradeTargetID(playerID);
+
+	ManagedReference<TradeSession*> playerTradeContainer = player->getActiveSession(SessionFacadeType::TRADE).castTo<TradeSession*>();
+
+	if (playerTradeContainer == nullptr) {
+		playerTradeContainer = new TradeSession();
+		player->addActiveSession(SessionFacadeType::TRADE, playerTradeContainer);
+	} else {
+		playerTradeContainer->clearSession();
+	}
+
+	playerTradeContainer->setTradeTargetPlayer(targetID);
+
+	ManagedReference<TradeSession*> targetTradeContainer = targetPlayer->getActiveSession(SessionFacadeType::TRADE).castTo<TradeSession*>();
+
+	if (targetTradeContainer == nullptr) {
+		targetTradeContainer = new TradeSession();
+		targetPlayer->addActiveSession(SessionFacadeType::TRADE, targetTradeContainer);
+	} else {
+		targetTradeContainer->clearSession();
+	}
+
+	targetTradeContainer->setTradeTargetPlayer(playerID);
+
+	BeginTradeMessage* msg = new BeginTradeMessage(targetPlayer->getObjectID());
+
+	if (msg != nullptr)
+		player->sendMessage(msg);
+
+	BeginTradeMessage* msg2 = new BeginTradeMessage(player->getObjectID());
+
+	if (msg2 != nullptr)
+		targetPlayer->sendMessage(msg2);
+
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
+static ManagedReference<TradeSession*> iaResolveTradeSession(CreatureObject* creature) {
+	if (creature == nullptr)
+		return nullptr;
+
+	return creature->getActiveSession(SessionFacadeType::TRADE).castTo<TradeSession*>();
+}
+
+static CreatureObject* iaResolveTradePartner(CreatureObject* player, TradeSession* tradeContainer) {
+	if (player == nullptr || tradeContainer == nullptr)
+		return nullptr;
+
+	ZoneServer* zoneServer = ServerCore::getZoneServer();
+
+	if (zoneServer == nullptr)
+		return nullptr;
+
+	uint64 targetID = tradeContainer->getTradeTargetPlayer();
+	ManagedReference<SceneObject*> object = zoneServer->getObject(targetID);
+
+	if (object == nullptr || !object->isPlayerCreature())
+		return nullptr;
+
+	return object->asCreatureObject();
+}
+
+int DirectorManager::iaHasActiveTrade(lua_State* L) {
+	if (checkArgumentCount(L, 1) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaHasActiveTrade";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* creature = (CreatureObject*)lua_touserdata(L, -1);
+
+	if (creature == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	ManagedReference<TradeSession*> tradeContainer = iaResolveTradeSession(creature);
+
+	if (tradeContainer == nullptr || tradeContainer->getTradeTargetPlayer() == 0) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
+int DirectorManager::iaHasVerifiedTrade(lua_State* L) {
+	if (checkArgumentCount(L, 1) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaHasVerifiedTrade";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* creature = (CreatureObject*)lua_touserdata(L, -1);
+
+	if (creature == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	ManagedReference<TradeSession*> tradeContainer = iaResolveTradeSession(creature);
+
+	if (tradeContainer == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	lua_pushboolean(L, tradeContainer->hasVerifiedTrade() ? 1 : 0);
+	return 1;
+}
+
+int DirectorManager::iaGetTradePartnerMoney(lua_State* L) {
+	if (checkArgumentCount(L, 1) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaGetTradePartnerMoney";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* creature = (CreatureObject*)lua_touserdata(L, -1);
+
+	if (creature == nullptr) {
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+
+	ManagedReference<TradeSession*> tradeContainer = iaResolveTradeSession(creature);
+
+	if (tradeContainer == nullptr) {
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+
+	CreatureObject* partner = iaResolveTradePartner(creature, tradeContainer);
+
+	if (partner == nullptr) {
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+
+	ManagedReference<TradeSession*> partnerTrade = iaResolveTradeSession(partner);
+
+	if (partnerTrade == nullptr) {
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+
+	lua_pushinteger(L, partnerTrade->getMoneyToTrade());
+	return 1;
+}
+
+int DirectorManager::iaGetTradePartnerItemCount(lua_State* L) {
+	if (checkArgumentCount(L, 1) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaGetTradePartnerItemCount";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* creature = (CreatureObject*)lua_touserdata(L, -1);
+
+	if (creature == nullptr) {
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+
+	ManagedReference<TradeSession*> tradeContainer = iaResolveTradeSession(creature);
+
+	if (tradeContainer == nullptr) {
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+
+	CreatureObject* partner = iaResolveTradePartner(creature, tradeContainer);
+
+	if (partner == nullptr) {
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+
+	ManagedReference<TradeSession*> partnerTrade = iaResolveTradeSession(partner);
+
+	if (partnerTrade == nullptr) {
+		lua_pushinteger(L, 0);
+		return 1;
+	}
+
+	lua_pushinteger(L, partnerTrade->getTradeSize());
+	return 1;
+}
+
+int DirectorManager::iaTradePartnerVerified(lua_State* L) {
+	if (checkArgumentCount(L, 1) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaTradePartnerVerified";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* creature = (CreatureObject*)lua_touserdata(L, -1);
+
+	if (creature == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	ManagedReference<TradeSession*> tradeContainer = iaResolveTradeSession(creature);
+
+	if (tradeContainer == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	CreatureObject* partner = iaResolveTradePartner(creature, tradeContainer);
+
+	if (partner == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	ManagedReference<TradeSession*> partnerTrade = iaResolveTradeSession(partner);
+
+	if (partnerTrade == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	lua_pushboolean(L, partnerTrade->hasVerifiedTrade() ? 1 : 0);
+	return 1;
+}
+
+int DirectorManager::iaGiveResourceSample(lua_State* L) {
+	if (checkArgumentCount(L, 3) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaGiveResourceSample";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* creature = (CreatureObject*)lua_touserdata(L, -3);
+	String resourceType = lua_tostring(L, -2);
+	int quantity = (int)lua_tointeger(L, -1);
+
+	if (creature == nullptr || resourceType.isEmpty()) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	if (quantity < 1)
+		quantity = 10000;
+	if (quantity > 30000)
+		quantity = 30000;
+
+	ZoneServer* zoneServer = creature->getZoneServer();
+	if (zoneServer == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	ResourceManager* resourceManager = zoneServer->getResourceManager();
+	if (resourceManager == nullptr) {
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	String zoneName = "tatooine";
+	if (creature->getZone() != nullptr)
+		zoneName = creature->getZone()->getZoneName();
+
+	ManagedReference<ResourceSpawn*> spawn = resourceManager->getCurrentSpawn(resourceType, zoneName);
+
+	if (spawn == nullptr) {
+		UnicodeString args(resourceType);
+		resourceManager->createResourceSpawn(creature, args);
+		spawn = resourceManager->getCurrentSpawn(resourceType, zoneName);
+	}
+
+	if (spawn == nullptr) {
+		creature->sendSystemMessage("[LBG] Ressource introuvable : " + resourceType);
+		lua_pushboolean(L, 0);
+		return 1;
+	}
+
+	String spawnName = spawn->getName();
+	resourceManager->givePlayerResource(creature, spawnName, quantity);
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
+int DirectorManager::iaVerifyTrade(lua_State* L) {
+	if (checkArgumentCount(L, 1) == 1) {
+		String err = "incorrect number of arguments passed to DirectorManager::iaVerifyTrade";
+		printTraceError(L, err);
+		ERROR_CODE = INCORRECT_ARGUMENTS;
+		return 0;
+	}
+
+	CreatureObject* player = (CreatureObject*)lua_touserdata(L, -1);
+
+	if (player == nullptr) {
+		lua_pushboolean(L, 0);
+		lua_pushboolean(L, 0);
+		return 2;
+	}
+
+	ManagedReference<TradeSession*> tradeContainer = iaResolveTradeSession(player);
+
+	if (tradeContainer == nullptr || tradeContainer->getTradeTargetPlayer() == 0) {
+		lua_pushboolean(L, 0);
+		lua_pushboolean(L, 0);
+		return 2;
+	}
+
+	if (tradeContainer->hasVerifiedTrade()) {
+		lua_pushboolean(L, 1);
+		lua_pushboolean(L, 0);
+		return 2;
+	}
+
+	ManagedReference<PlayerManager*> playerManager = ServerCore::getZoneServer()->getPlayerManager();
+
+	if (playerManager == nullptr) {
+		lua_pushboolean(L, 0);
+		lua_pushboolean(L, 0);
+		return 2;
+	}
+
+	Locker locker(player);
+	playerManager->handleVerifyTradeMessage(player);
+
+	ManagedReference<TradeSession*> afterTrade = iaResolveTradeSession(player);
+	bool completed = (afterTrade == nullptr || afterTrade->getTradeTargetPlayer() == 0);
+
+	lua_pushboolean(L, 1);
+	lua_pushboolean(L, completed ? 1 : 0);
+	return 2;
 }
 
 int DirectorManager::iaApplyPilotHeight(lua_State* L) {
