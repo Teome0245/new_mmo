@@ -47,6 +47,26 @@ public:
 
 	int getObserverCount(uint32 eventType) const;
 	int getFullObserverCount() const;
+
+	/**
+	 * Thread-safe serialization: acquires a read lock on observerMutex before
+	 * iterating the underlying HashTable to prevent race conditions with
+	 * registerObserver/dropObserver (which can trigger rehash) on other threads.
+	 * This fixes the segfault in UpdateModifiedObjectsThread::commitObjectsToDatabase.
+	 */
+	bool toBinaryStream(ObjectOutputStream* stream) {
+		ReadLocker locker(&observerMutex);
+		return HashTable<uint32, SortedVector<ManagedReference<Observer*> > >::toBinaryStream(stream);
+	}
+
+	/**
+	 * Thread-safe deserialization: acquires a write lock on observerMutex before
+	 * populating the underlying HashTable.
+	 */
+	bool parseFromBinaryStream(ObjectInputStream* stream) {
+		Locker locker(&observerMutex);
+		return HashTable<uint32, SortedVector<ManagedReference<Observer*> > >::parseFromBinaryStream(stream);
+	}
 };
 
 
