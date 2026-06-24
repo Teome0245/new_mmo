@@ -36,6 +36,10 @@ void BasePacketHandler::handlePacket(BaseClient* client, Packet* pack) {
 	debug() << "READ - " << *pack;
 
 	try {
+		if (pack == nullptr || pack->size() < 2) {
+			return;
+		}
+
 		uint16 opcode = pack->parseShort();
 
 		switch (opcode) {
