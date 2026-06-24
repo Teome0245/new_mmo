@@ -1378,14 +1378,16 @@ bool BaseClient::handleNetStatusRequest(Packet* pack) {
 		uint16 tick = pack->parseNetShort();
 
 		try {
-			uint32 unk1 = pack->parseInt();
-			uint32 unk2 = pack->parseInt();
-			uint32 unk3 = pack->parseInt();
-			uint32 unk4 = pack->parseInt();
-			uint32 unk5 = pack->parseInt();
+			if (pack->size() - pack->getOffset() >= 36) {
+				uint32 unk1 = pack->parseInt();
+				uint32 unk2 = pack->parseInt();
+				uint32 unk3 = pack->parseInt();
+				uint32 unk4 = pack->parseInt();
+				uint32 unk5 = pack->parseInt();
 
-			remoteStats.setTotalPacketsSent(pack->parseNetLong());
-			remoteStats.setTotalPacketsReceived(pack->parseNetLong());
+				remoteStats.setTotalPacketsSent(pack->parseNetLong());
+				remoteStats.setTotalPacketsReceived(pack->parseNetLong());
+			}
 		} catch (Exception& e) {
 			error() << __PRETTY_FUNCTION__ << " " << ip_full << ": " << e.getMessage();
 		}
