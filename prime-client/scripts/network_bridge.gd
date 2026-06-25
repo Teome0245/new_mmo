@@ -7,10 +7,11 @@ const BIND_PORT: int = 12345
 @export var world_map_path:      NodePath = NodePath("../WorldMap")
 @export var main_path:           NodePath = NodePath("..")
 
-var _udp:    PacketPeerUDP = PacketPeerUDP.new()
-var _em:     EntityManager = null
-var _main:   Node          = null
-var _active: bool          = false
+var _udp:       PacketPeerUDP = PacketPeerUDP.new()
+var _em:        EntityManager = null
+var _main:      Node          = null
+var _active:    bool          = false
+var _demo_cleared: bool       = false   # devient true à la première connexion live
 
 func _ready() -> void:
 	_em   = get_node_or_null(entity_manager_path)
@@ -61,8 +62,32 @@ func _dispatch(text: String) -> void:
 		"zc":
 			if _em:
 				_em.clear()
+			_demo_cleared = true
 			if _main and _main.has_method("on_zone_change"):
 				_main.on_zone_change()
+		# M5 — Joueur connecté : spawn + suivi caméra + clear demo
+		"cn":
+			if not _demo_cleared and _em:
+				_em.clear()          # efface les entités demo
+				_demo_cleared = true
+			var oid := int(d.get("id", 0))
+			var x   := float(d.get("x", 0.0))
+			var y   := float(d.get("y", 0.0))
+			var z   := float(d.get("z", 0.0))
+			var pl  := str(d.get("pl", ""))
+			if _em and oid != 0:
+				_em.spawn(oid, Vector3(x, y, z), Entity.COLOR_PLAYER_OFFICIAL, "YOU")
+			var pc: PlayerController = get_node_or_null("../PlayerController") as PlayerController
+			if pc and oid != 0:
+				pc.set_player_id(oid)
+				pc.send_initial_position(x, y, z)
+			if _main and _main.has_method("on_player_connected"):
+				_main.on_player_connected(oid, pl)
+			print("[Bridge] Joueur connecté: 0x%016x  planet=%s  pos=(%.1f,%.1f,%.1f)" % [oid, pl, x, y, z])
+		# M5 — Etat locomotion → StateLabel
+		"ls":
+			if _main and _main.has_method("on_locomotion_state"):
+				_main.on_locomotion_state(str(d.get("s", "STANDING")))
 		"ws":
 			_load_ws_json(str(d.get("path", "")))
 

@@ -5,14 +5,18 @@ extends Node2D
 @onready var entity_manager: EntityManager = $EntityManager
 @onready var info_label:     Label         = $UI/InfoPanel/VBox/InfoLabel
 @onready var stats_label:    Label         = $UI/InfoPanel/VBox/StatsLabel
+@onready var state_label:    Label         = $UI/StatePanel/StateLabel
 
 const CAM_SPEED:     float   = 400.0
 const CAM_ZOOM_STEP: float   = 0.15
 const CAM_ZOOM_MIN:  Vector2 = Vector2(0.05, 0.05)
 const CAM_ZOOM_MAX:  Vector2 = Vector2(8.0, 8.0)
 
-var _cam_target:  Vector2 = Vector2.ZERO
-var _frame_count: int     = 0
+var _cam_target:   Vector2 = Vector2.ZERO
+var _frame_count:  int     = 0
+var _planet_name:  String  = ""         # planete courante (M5)
+var _loco_state:   String  = "STANDING" # etat locomotion (M5)
+var _is_connected: bool    = false       # vrai quand un vrai joueur est connecté
 
 func _ready() -> void:
 	_demo_spawn()
@@ -117,3 +121,26 @@ func on_object_destroy(object_id: int) -> void:
 
 func on_zone_change() -> void:
 	entity_manager.clear()
+	_is_connected = false
+
+# M5 — Joueur connecté (reçu via NetworkBridge "cn")
+func on_player_connected(obj_id: int, planet: String) -> void:
+	_planet_name  = planet
+	_is_connected = true
+	if state_label:
+		state_label.text = "CONNECTED"
+	_update_info()
+	print("[Main] Joueur 0x%016x connecté sur %s" % [obj_id, planet])
+
+# M5 — Etat locomotion depuis prime_controller.py ("ls")
+func on_locomotion_state(state: String) -> void:
+	_loco_state = state.to_upper()
+	if state_label:
+		state_label.text = _loco_state
+		# Couleur selon l'etat
+		match _loco_state:
+			"RUNNING":  state_label.add_theme_color_override("font_color", Color(0.4, 1.0, 0.4, 1))
+			"JUMPING","FALLING": state_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.2, 1))
+			"SWIMMING": state_label.add_theme_color_override("font_color", Color(0.2, 0.8, 1.0, 1))
+			"WALKING":  state_label.add_theme_color_override("font_color", Color(0.5, 1.0, 0.5, 1))
+			_:          state_label.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5, 1))
