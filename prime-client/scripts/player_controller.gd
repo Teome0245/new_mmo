@@ -47,14 +47,14 @@ func _process(_delta: float) -> void:
 
 func _handle_movement() -> void:
 	for action in _KEY_MAP:
-		var pressed := false
+		var pressed: bool = false
 		for k: int in _KEY_MAP[action]:
 			if Input.is_physical_key_pressed(k):
 				pressed = true
 		if pressed != _state[action]:
 			_state[action] = pressed
 			_send({"t": action, "active": pressed})
-	var running := Input.is_physical_key_pressed(KEY_SHIFT)
+	var running: bool = Input.is_physical_key_pressed(KEY_SHIFT)
 	if running != _state["run"]:
 		_state["run"] = running
 		_send({"t": "run", "active": running})
@@ -74,7 +74,7 @@ func _handle_jump() -> void:
 func _follow_player() -> void:
 	if not follow_camera or not _camera or _player_id == 0 or not _em:
 		return
-	var e := _em.get_entity(_player_id)
+	var e: Entity = _em.get_entity(_player_id)
 	if e:
 		_camera.position = _camera.position.lerp(
 			e.position, CAM_FOLLOW_SPEED * get_process_delta_time()

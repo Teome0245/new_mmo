@@ -28,14 +28,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 func _load_map_texture() -> void:
-	var candidates := [
+	var candidates: Array[String] = [
 		MINIMAP_DIR + planet_name + ".png",
 		MINIMAP_DIR + planet_name + ".jpg",
 		MINIMAP_DIR + "planet_" + planet_name + ".png",
 	]
-	for path in candidates:
+	for path: String in candidates:
 		if ResourceLoader.exists(path):
-			var tex := load(path) as Texture2D
+			# load() retourne Variant — cast explicite vers Texture2D
+			var tex: Texture2D = load(path) as Texture2D
 			if tex:
 				_sprite.texture = tex
 				_has_texture    = true
@@ -48,17 +49,17 @@ func _load_map_texture() -> void:
 func _apply_scale() -> void:
 	if not _has_texture or _sprite == null:
 		return
-	var world_size_px := 2.0 * half_size * Projection3D2D.SCALE
-	var s             := world_size_px / float(MAP_IMAGE_SIZE)
+	var world_size_px: float = 2.0 * half_size * Projection3D2D.SCALE
+	var s: float             = world_size_px / float(MAP_IMAGE_SIZE)
 	_sprite.scale    = Vector2(s, s)
 	_sprite.position = Vector2.ZERO
 
 func _draw() -> void:
 	if _has_texture or not show_grid:
 		return
-	var world_px   := half_size * Projection3D2D.SCALE
-	var grid_step  := 512.0 * Projection3D2D.SCALE
-	var grid_count := int(half_size / 512.0)
+	var world_px:   float = half_size * Projection3D2D.SCALE
+	var grid_step:  float = 512.0 * Projection3D2D.SCALE
+	var grid_count: int   = int(half_size / 512.0)
 	draw_rect(Rect2(-world_px, -world_px, world_px * 2.0, world_px * 2.0),
 			Color(0.05, 0.06, 0.1, 0.7))
 	for i in range(-grid_count, grid_count + 1):

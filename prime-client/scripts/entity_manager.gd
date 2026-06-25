@@ -8,7 +8,8 @@ var _entities: Dictionary = {}
 var _entity_packed: PackedScene = null
 
 func _ready() -> void:
-	_entity_packed = load(ENTITY_SCENE)
+	# load() retourne Variant — cast explicite PackedScene
+	_entity_packed = load(ENTITY_SCENE) as PackedScene
 	if _entity_packed == null:
 		push_error("EntityManager: impossible de charger " + ENTITY_SCENE)
 
