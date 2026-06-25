@@ -1,10 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene format=3 uid="uid://c41aqiq0riuq2"]
 
-[ext_resource type="Script" path="res://scripts/main.gd"             id="1_main"]
-[ext_resource type="Script" path="res://scripts/entity_manager.gd"   id="2_em"]
-[ext_resource type="Script" path="res://scripts/network_bridge.gd"   id="3_bridge"]
-[ext_resource type="Script" path="res://scripts/world_map.gd"        id="4_wmap"]
-[ext_resource type="Script" path="res://scripts/player_controller.gd" id="5_pctrl"]
+[ext_resource type="Script" uid="uid://cqlfrtiqyx7p8" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://gylgk20kfgy7" path="res://scripts/entity_manager.gd" id="2_em"]
+[ext_resource type="Script" uid="uid://c4e62gj0620rk" path="res://scripts/network_bridge.gd" id="3_bridge"]
+[ext_resource type="Script" uid="uid://icqdttcxq2ms" path="res://scripts/world_map.gd" id="4_wmap"]
+[ext_resource type="Script" uid="uid://bpbfxahhuy574" path="res://scripts/player_controller.gd" id="5_pctrl"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.05, 0.05, 0.1, 0.78)
@@ -20,61 +20,58 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="Node2D" unique_id=1985474402]
 script = ExtResource("1_main")
 
-[node name="WorldMap" type="Node2D" parent="."]
+[node name="WorldMap" type="Node2D" parent="." unique_id=261177181]
 script = ExtResource("4_wmap")
 planet_name = "tatooine"
 
-[node name="MapSprite" type="Sprite2D" parent="WorldMap"]
+[node name="MapSprite" type="Sprite2D" parent="WorldMap" unique_id=96787536]
 z_index = -10
 
-[node name="Camera2D" type="Camera2D" parent="."]
-zoom = Vector2(1, 1)
-position_smoothing_enabled = false
+[node name="Camera2D" type="Camera2D" parent="." unique_id=213625031]
 
-[node name="EntityManager" type="Node2D" parent="."]
+[node name="EntityManager" type="Node2D" parent="." unique_id=1911858875]
 script = ExtResource("2_em")
 
-[node name="NetworkBridge" type="Node" parent="."]
+[node name="NetworkBridge" type="Node" parent="." unique_id=299903085]
 script = ExtResource("3_bridge")
 entity_manager_path = NodePath("../EntityManager")
-world_map_path      = NodePath("../WorldMap")
-main_path           = NodePath("..")
+world_map_path = NodePath("../WorldMap")
+main_path = NodePath("..")
 
-[node name="PlayerController" type="Node" parent="."]
+[node name="PlayerController" type="Node" parent="." unique_id=381393563]
 script = ExtResource("5_pctrl")
 enabled = true
 follow_camera = true
 
-[node name="UI" type="CanvasLayer" parent="."]
+[node name="UI" type="CanvasLayer" parent="." unique_id=319586651]
 
-[node name="InfoPanel" type="PanelContainer" parent="UI"]
+[node name="InfoPanel" type="PanelContainer" parent="UI" unique_id=769391809]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_top = -76.0
 offset_right = 800.0
-offset_bottom = 0.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="VBox" type="VBoxContainer" parent="UI/InfoPanel"]
+[node name="VBox" type="VBoxContainer" parent="UI/InfoPanel" unique_id=994384847]
 layout_mode = 2
 
-[node name="InfoLabel" type="Label" parent="UI/InfoPanel/VBox"]
+[node name="InfoLabel" type="Label" parent="UI/InfoPanel/VBox" unique_id=1705965394]
 layout_mode = 2
-text = "Prime Client v0.1  |  M4 Controls"
 theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
 theme_override_font_sizes/font_size = 13
+text = "Prime Client v0.1  |  M4 Controls"
 
-[node name="StatsLabel" type="Label" parent="UI/InfoPanel/VBox"]
+[node name="StatsLabel" type="Label" parent="UI/InfoPanel/VBox" unique_id=2054250193]
 layout_mode = 2
-text = "[ZQSD/WASD] marcher  [Shift] courir  [Espace] sauter  [Shift+Espace] nager haut  [Ctrl+M] carte  [R] reset cam"
 theme_override_colors/font_color = Color(0.6, 0.7, 0.85, 0.9)
 theme_override_font_sizes/font_size = 11
+text = "[ZQSD/WASD] marcher  [Shift] courir  [Espace] sauter  [Shift+Espace] nager haut  [Ctrl+M] carte  [R] reset cam"
 
-[node name="StatePanel" type="PanelContainer" parent="UI"]
+[node name="StatePanel" type="PanelContainer" parent="UI" unique_id=2095658107]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -82,9 +79,9 @@ offset_left = -200.0
 offset_bottom = 80.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_hint")
 
-[node name="StateLabel" type="Label" parent="UI/StatePanel"]
+[node name="StateLabel" type="Label" parent="UI/StatePanel" unique_id=401423268]
 layout_mode = 2
-text = "STANDING"
-theme_override_colors/font_color = Color(0.4, 1.0, 0.5, 1)
+theme_override_colors/font_color = Color(0.4, 1, 0.5, 1)
 theme_override_font_sizes/font_size = 14
+text = "STANDING"
 horizontal_alignment = 1
