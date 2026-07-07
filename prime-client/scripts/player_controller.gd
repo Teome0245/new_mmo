@@ -4,9 +4,12 @@ class_name PlayerController
 
 const CMD_PORT:        int   = 12346
 const CAM_FOLLOW_SPEED: float = 5.0
+const PLAY_CFG:        String = "res://config/play_mode.json"
 
-@export var enabled:       bool = true
+@export var enabled:       bool = false
 @export var follow_camera: bool = true
+@export var cmd_host:      String = "127.0.0.1"
+@export var cmd_port:      int   = CMD_PORT
 
 var _udp:       PacketPeerUDP = PacketPeerUDP.new()
 var _camera:    Camera2D      = null
@@ -29,11 +32,25 @@ const _KEY_MAP: Dictionary = {
 }
 
 func _ready() -> void:
-	_udp.set_dest_address("127.0.0.1", CMD_PORT)
+	_load_play_cfg()
+	_udp.set_dest_address(cmd_host, cmd_port)
 	_camera = get_node_or_null("../Camera2D")
 	_em     = get_node_or_null("../EntityManager")
 	if enabled:
-		print("[PlayerCtrl] Actif — UDP -> 127.0.0.1:%d" % CMD_PORT)
+		print("[PlayerCtrl] Actif — UDP -> %s:%d" % [cmd_host, cmd_port])
+
+func _load_play_cfg() -> void:
+	if not FileAccess.file_exists(PLAY_CFG):
+		return
+	var f := FileAccess.open(PLAY_CFG, FileAccess.READ)
+	var raw: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if raw is Dictionary:
+		var cfg: Dictionary = raw
+		var h := str(cfg.get("cmd_host", "")).strip_edges()
+		if h != "":
+			cmd_host = h
+		cmd_port = int(cfg.get("cmd_port", cmd_port))
 
 func set_player_id(obj_id: int) -> void:
 	_player_id = obj_id

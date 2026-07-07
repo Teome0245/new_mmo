@@ -1,0 +1,50 @@
+{
+  "zone": "tatooine",
+  "schema_version": 1,
+  "notes": "Polygones Core3 (x,z) — Mos Eisley / environs. Y eau outdoor ~ -4800.",
+  "water_level_y": -4800.0,
+  "water": [
+    {
+      "id": "water:mos_south_oasis",
+      "label": "Bassin sud ME",
+      "polygon": [
+        [3380, -4920],
+        [3620, -4920],
+        [3620, -4720],
+        [3380, -4720]
+      ]
+    },
+    {
+      "id": "water:mos_east_wadi",
+      "label": "Oued est",
+      "polygon": [
+        [3580, -4850],
+        [3720, -4780],
+        [3680, -4680],
+        [3540, -4750]
+      ]
+    }
+  ],
+  "collision": [
+    {
+      "id": "col:starport_block",
+      "label": "Starport",
+      "polygon": [
+        [3480, -4830],
+        [3560, -4830],
+        [3560, -4770],
+        [3480, -4770]
+      ]
+    },
+    {
+      "id": "col:cantina_block",
+      "label": "Cantina",
+      "polygon": [
+        [3510, -4815],
+        [3545, -4815],
+        [3545, -4785],
+        [3510, -4785]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "poll_interval_s": 0.5,
+  "player_snapshots": "res://cache/player_snapshots.json",
+  "npc_snapshots": "res://cache/npc_snapshots.json",
+  "zone_feed_json": "res://cache/zone_feed.json",
+  "prefer_zone_feed_json": true,
+  "demo_entities": "res://assets/demo_entities.json",
+  "use_demo_if_empty": false,
+  "players_only": false
+}

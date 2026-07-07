@@ -2,3 +2,4 @@
 .godot/
 *.uid
 export_presets.cfg
+cache/*.json

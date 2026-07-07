@@ -6,6 +6,12 @@
 [ext_resource type="Script" uid="uid://icqdttcxq2ms" path="res://scripts/world_map.gd" id="4_wmap"]
 [ext_resource type="Script" uid="uid://bpbfxahhuy574" path="res://scripts/player_controller.gd" id="5_pctrl"]
 
+[ext_resource type="Script" path="res://scripts/snapshot_bridge.gd" id="6_snap"]
+[ext_resource type="Script" path="res://scripts/poi_layer.gd" id="7_poi"]
+[ext_resource type="Script" path="res://scripts/zone_layers.gd" id="8_zones"]
+[ext_resource type="Script" path="res://scripts/ws_objects_layer.gd" id="9_ws"]
+[ext_resource type="Script" path="res://scripts/hub_buildings_layer.gd" id="10_hub"]
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.05, 0.05, 0.1, 0.78)
 corner_radius_top_left = 6
@@ -30,6 +36,22 @@ planet_name = "tatooine"
 [node name="MapSprite" type="Sprite2D" parent="WorldMap" unique_id=96787536]
 z_index = -10
 
+[node name="PoiLayer" type="Node2D" parent="WorldMap"]
+z_index = -9
+script = ExtResource("7_poi")
+
+[node name="ZoneLayers" type="Node2D" parent="WorldMap"]
+z_index = -8
+script = ExtResource("8_zones")
+
+[node name="WsObjectsLayer" type="Node2D" parent="WorldMap"]
+z_index = -7
+script = ExtResource("9_ws")
+
+[node name="HubBuildingsLayer" type="Node2D" parent="WorldMap"]
+z_index = -6
+script = ExtResource("10_hub")
+
 [node name="Camera2D" type="Camera2D" parent="." unique_id=213625031]
 
 [node name="EntityManager" type="Node2D" parent="." unique_id=1911858875]
@@ -38,12 +60,16 @@ script = ExtResource("2_em")
 [node name="NetworkBridge" type="Node" parent="." unique_id=299903085]
 script = ExtResource("3_bridge")
 entity_manager_path = NodePath("../EntityManager")
+snapshot_bridge_path = NodePath("../SnapshotBridge")
 world_map_path = NodePath("../WorldMap")
 main_path = NodePath("..")
 
+[node name="SnapshotBridge" type="Node" parent="." unique_id=884120337]
+script = ExtResource("6_snap")
+
 [node name="PlayerController" type="Node" parent="." unique_id=381393563]
 script = ExtResource("5_pctrl")
-enabled = true
+enabled = false
 follow_camera = true
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=319586651]

@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "hub": "lost_heaven",
+  "anchor": {
+    "x": 4749.0,
+    "z": -737.0
+  },
+  "buildings": [
+    {
+      "id": "poi:lost_heaven_market",
+      "kind": "shops",
+      "label": "Bazar",
+      "x": 4749.0,
+      "z": -737.0,
+      "size_m": 48,
+      "essential": true
+    },
+    {
+      "id": "poi:lost_heaven_bank",
+      "kind": "bank",
+      "label": "Banque",
+      "x": 4549.0,
+      "z": -737.0,
+      "size_m": 40,
+      "essential": true
+    },
+    {
+      "id": "poi:lost_heaven_blue_frog",
+      "kind": "terminal",
+      "label": "Blue Frog",
+      "x": 4799.0,
+      "z": -787.0,
+      "size_m": 10,
+      "essential": true
+    },
+    {
+      "id": "poi:lost_heaven_starport",
+      "kind": "starport_shuttle",
+      "label": "Starport",
+      "x": 4749.0,
+      "z": -537.0,
+      "size_m": 36,
+      "essential": true
+    }
+  ]
+}

@@ -923,7 +923,8 @@ def _fmt_baseline(body: bytes) -> str:
     return f"[Baseline] obj=0x{obj_id:016x}  type=0x{var_type:04x}  len={data_len}"
 
 
-def delta_console_loop(zone: SOEClient, bridge: Optional["GodotBridge"] = None) -> None:
+def delta_console_loop(zone: SOEClient, bridge: Optional["GodotBridge"] = None,
+                       on_start_scene=None) -> None:
     """
     M1.3 : Boucle principale d'ecoute.
     Affiche Delta (0x000F), ObjCtrl (0x001B) et Baseline (0x0016) en temps reel.
@@ -993,6 +994,8 @@ def delta_console_loop(zone: SOEClient, bridge: Optional["GodotBridge"] = None) 
                     if bridge is not None:
                         bridge.zone_change(planet)
                         bridge.connect_player(oid, x, y, z, planet)
+                    if on_start_scene is not None:
+                        on_start_scene(oid, x, y, z)
                     pkt_count += 1
 
                 elif sub_op == HASH_SCENE_CREATE:
@@ -1037,8 +1040,9 @@ class GodotBridge:
     Envoie des paquets JSON compacts via UDP local vers le NetworkBridge Godot.
     Port par défaut : 12345 (localhost uniquement).
     """
-    def __init__(self, port: int = 12345):
+    def __init__(self, port: int = 12345, host: str | None = None):
         self.port    = port
+        self.host    = (host or os.environ.get("GODOT_HOST", "127.0.0.1")).strip() or "127.0.0.1"
         self._sock   = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._active = port > 0
 
@@ -1047,7 +1051,7 @@ class GodotBridge:
             return
         try:
             data = json.dumps(obj, separators=(',', ':')).encode('utf-8')
-            self._sock.sendto(data, ('127.0.0.1', self.port))
+            self._sock.sendto(data, (self.host, self.port))
         except Exception:
             pass
 
@@ -1108,6 +1112,10 @@ def main():
                         help="ZoneServer port (auto si 0)")
     parser.add_argument("--godot-port", type=int, default=0,
                         help="Port UDP Godot pour le bridge (0 = desactive, defaut 12345 si >0)")
+    parser.add_argument("--play", action="store_true",
+                        help="M5: ZQSD via prime_controller (port cmd 12346)")
+    parser.add_argument("--cmd-port", type=int, default=12346,
+                        help="Port UDP commandes Godot (prime_controller)")
     parser.add_argument("--no-zone",    action="store_true",
                         help="Arreter apres login (ne pas connecter au ZoneServer)")
     parser.add_argument("--debug",      action="store_true",
@@ -1147,9 +1155,33 @@ def main():
         print("[Zone] Connexion ZoneServer echouee")
         sys.exit(1)
 
-    godot_port = args.godot_port if args.godot_port > 0 else 0
+    godot_port = args.godot_port if args.godot_port > 0 else (12345 if args.play else 0)
     bridge = GodotBridge(godot_port) if godot_port else None
-    delta_console_loop(zone, bridge)
+
+    play_stop = threading.Event()
+    play_ctrl = None
+    if args.play:
+        try:
+            from prime_controller import PlayerController as PhysController, CommandServer
+        except ImportError as e:
+            print(f"[--play] prime_controller indisponible: {e}")
+            sys.exit(1)
+
+        def _on_player_scene(oid: int, x: float, y: float, z: float) -> None:
+            nonlocal play_ctrl
+            if play_ctrl is not None:
+                return
+            play_ctrl = PhysController(zone, oid, bridge)
+            play_ctrl.set_position(x, y, z)
+            cmd = CommandServer(play_ctrl, args.cmd_port)
+            threading.Thread(target=play_ctrl.run_loop, args=(play_stop,), daemon=True).start()
+            threading.Thread(target=cmd.run, args=(play_stop,), daemon=True).start()
+            print(f"[--play] Contrôleur actif obj=0x{oid:016x}  cmd=:{args.cmd_port}")
+
+        delta_console_loop(zone, bridge, on_start_scene=_on_player_scene if args.play else None)
+    else:
+        delta_console_loop(zone, bridge)
+    play_stop.set()
     zone.close()
 
 

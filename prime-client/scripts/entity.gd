@@ -36,12 +36,12 @@ func _draw() -> void:
 	draw_circle(draw_pos, radius, color)
 	# Contour
 	draw_arc(draw_pos, radius, 0.0, TAU, 24, color.lightened(0.4), 1.5)
-	# Trait hauteur si en l'air
-	if abs(height_offset) > 1.0:
+	# Trait hauteur (saut / étage) — court uniquement, pas la coord Y monde
+	if abs(height_offset) > 1.0 and abs(height_offset) <= 48.0:
 		draw_line(
 			Vector2(0.0, 0.0),
 			draw_pos,
-			Color(color.r, color.g, color.b, 0.5),
+			Color(color.r, color.g, color.b, 0.45),
 			1.0
 		)
 	# Label

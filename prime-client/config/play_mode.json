@@ -1,0 +1,5 @@
+{
+  "cmd_host": "127.0.0.1",
+  "cmd_port": 12346,
+  "notes": "Godot Windows + Python WSL : mettre cmd_host = IP WSL (ip route | head -1)"
+}

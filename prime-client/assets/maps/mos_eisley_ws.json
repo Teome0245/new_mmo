@@ -1,0 +1,7 @@
+[
+  {"id": 1001, "tmpl": "object/building/tatooine/cantina_tatooine.iff", "x": 3522.0, "y": -4798.0, "z": 5.0, "cell": 0},
+  {"id": 1002, "tmpl": "object/building/tatooine/shuttleport_tatooine.iff", "x": 3488.0, "y": -4798.0, "z": 5.0, "cell": 0},
+  {"id": 1003, "tmpl": "object/building/tatooine/bank_tatooine.iff", "x": 3555.0, "y": -4805.0, "z": 5.0, "cell": 0},
+  {"id": 1004, "tmpl": "object/building/tatooine/cloning_tatooine.iff", "x": 3505.0, "y": -4788.0, "z": 5.0, "cell": 0},
+  {"id": 1005, "tmpl": "object/building/tatooine/guild_commerce_tatooine_style_01.iff", "x": 3538.0, "y": -4812.0, "z": 5.0, "cell": 0}
+]

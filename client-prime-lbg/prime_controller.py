@@ -315,9 +315,9 @@ class CommandServer:
         self.controller = controller
         self.port       = port
         self._sock      = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._sock.bind(('127.0.0.1', port))
+        self._sock.bind(('0.0.0.0', port))
         self._sock.settimeout(0.1)
-        print(f"[CommandServer] En écoute sur 127.0.0.1:{port}")
+        print(f"[CommandServer] En écoute sur 0.0.0.0:{port}")
 
     def run(self, stop_event: threading.Event) -> None:
         while not stop_event.is_set():
