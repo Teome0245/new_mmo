@@ -7,7 +7,7 @@ Dépôt Git des **sources serveur** et outils client LBG. Les patches gameplay/I
 | Chemin | Rôle | VM cible |
 |--------|------|----------|
 | `lbg-mmo/Core3/MMOCoreORB/` | **PreCU** stock SWGEmu (C++ + SQL + scripts) | **245** → `/opt/lbg-new-mmo/MMOCoreORB` |
-| `lbg-mmo/server-core3/` | **Prime** (fork clean + patches LBG) | **246** → `/opt/lbg-Prime/lbg-mmo/server-core3` |
+| `lbg-mmo/server-core3/` | **LBG Prime** (fork clean + patches LBG) | **246** → `/opt/lbg-Prime/lbg-mmo/server-core3` |
 | `lbg-mmo/MMOEngine/` | Moteur partagé | **246** (build Prime) |
 | `launchpad/` | LBG Launchpad (sources Electron) | postes joueurs |
 | `modding_tools/swb-repo-cli/` | Outils modding légers | dev |
