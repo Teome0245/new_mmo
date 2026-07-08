@@ -1,4 +1,4 @@
-# new_mmo — sources LBG (Core3 SWG PreCU + LBG Prime)
+# new_mmo — sources (Core3 SWG PreCU + LBG Prime)
 
 Dépôt Git des **sources serveur** et outils client LBG. Les patches gameplay/IA (Lua, JSON) vivent dans le monorepo **`LBG_IA_MMO/content/core3/`** et sont déployés séparément.
 
