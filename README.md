@@ -1,4 +1,4 @@
-# new_mmo — sources LBG (Core3 PreCU + Prime Antigravity)
+# new_mmo — sources LBG (Core3 SWG PreCU + LBG Prime)
 
 Dépôt Git des **sources serveur** et outils client LBG. Les patches gameplay/IA (Lua, JSON) vivent dans le monorepo **`LBG_IA_MMO/content/core3/`** et sont déployés séparément.
 
@@ -7,8 +7,8 @@ Dépôt Git des **sources serveur** et outils client LBG. Les patches gameplay/I
 | Chemin | Rôle | VM cible |
 |--------|------|----------|
 | `lbg-mmo/Core3/MMOCoreORB/` | **PreCU** stock SWGEmu (C++ + SQL + scripts) | **245** → `/opt/lbg-new-mmo/MMOCoreORB` |
-| `lbg-mmo/server-core3/` | **Prime** Antigravity (fork clean + patches LBG) | **246** → `/opt/lbg-antigravity/lbg-mmo/server-core3` |
-| `lbg-mmo/MMOEngine/` | Moteur partagé Antigravity | **246** (build Prime) |
+| `lbg-mmo/server-core3/` | **Prime** (fork clean + patches LBG) | **246** → `/opt/lbg-antigravity/lbg-mmo/server-core3` |
+| `lbg-mmo/MMOEngine/` | Moteur partagé | **246** (build Prime) |
 | `launchpad/` | LBG Launchpad (sources Electron) | postes joueurs |
 | `modding_tools/swb-repo-cli/` | Outils modding légers | dev |
 
