@@ -5,6 +5,7 @@
 
 #include "engine/engine.h"
 #include "server/lbg/LbgZoneBridge.h"
+#include "server/lbg/LbgZoneBridgeJsonExport.h"
 #include "server/zone/Zone.h"
 #include "server/zone/ZoneServer.h"
 
@@ -33,6 +34,10 @@ public:
             }
             const String zone_name = zone->getZoneName();
             bridge->onZoneTick(std::string(zone_name.toCharArray()));
+        }
+
+        if (bridge != nullptr) {
+            lbg::zonebridge::publishZoneBridgeJson(bridge->collectReadOnlyDelta());
         }
 
         schedule(interval_ms_);
