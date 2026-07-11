@@ -348,7 +348,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--host",         default="192.168.0.246")
-    parser.add_argument("--zone-port",    type=int, default=44463)
+    parser.add_argument("--zone-port",    type=int, default=44563)
     parser.add_argument("--obj-id",       type=lambda x: int(x, 0), required=True,
                         help="Object ID du personnage (hex ou décimal)")
     parser.add_argument("--crc-seed",     type=lambda x: int(x, 0), required=True,
