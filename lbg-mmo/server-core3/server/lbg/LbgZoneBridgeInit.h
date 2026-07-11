@@ -1,7 +1,7 @@
 #ifndef SERVER_LBG_LBGZONEBRIDGEINIT_H_
 #define SERVER_LBG_LBGZONEBRIDGEINIT_H_
 
-class ZoneServer;
+#include "server/zone/ZoneServer.h"
 
 namespace lbg {
 namespace zonebridge {
