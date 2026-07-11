@@ -49,6 +49,7 @@
 #include "SpaceZoneLoadManagersTask.h"
 #include "ZoneLoadManagersTask.h"
 #include "ShutdownTask.h"
+#include "server/lbg/LbgZoneBridgeInit.h"
 
 ZoneServerImplementation::ZoneServerImplementation(ConfigManager* config) :
 		ManagedServiceImplementation(), Logger("ZoneServer") {
@@ -367,6 +368,8 @@ void ZoneServerImplementation::startManagers() {
 
 	frsManager = new FrsManager(_this.getReferenceUnsafeStaticCast());
 	frsManager->initialize();
+
+	lbg::zonebridge::startZoneBridgeTick(_this.getReferenceUnsafeStaticCast());
 
 	info(true) << "ZoneServerImplementation -- Managers Started.";
 }
