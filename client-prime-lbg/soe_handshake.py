@@ -1325,6 +1325,8 @@ def main():
                         help="Port UDP commandes Godot (prime_controller)")
     parser.add_argument("--no-zone",    action="store_true",
                         help="Arreter apres login (ne pas connecter au ZoneServer)")
+    parser.add_argument("--zone-only", action="store_true",
+                        help="Arreter apres connexion zone (sonde M3b, sans boucle delta)")
     parser.add_argument("--debug",      action="store_true",
                         help="Logs SOE (CRC, paquets recus)")
     args = parser.parse_args()
@@ -1379,6 +1381,10 @@ def main():
     if zone is None:
         print("[Zone] Connexion ZoneServer echouee")
         sys.exit(1)
+
+    if args.zone_only:
+        zone.close()
+        sys.exit(0)
 
     godot_port = args.godot_port if args.godot_port > 0 else (12345 if args.play else 0)
     bridge = GodotBridge(godot_port) if godot_port else None
