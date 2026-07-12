@@ -113,8 +113,14 @@ SWG_CMD_START_SCENE = 0x0004   # CmdStartScene (planete + pos + obj_id joueur)
 SWG_SCENE_CREATE    = 0x0019   # SceneCreateObjectByName (hashed)
 SWG_SCENE_DESTROY   = 0x001A   # SceneDestroyObject
 
-# Hash SWGEmu des messages zone critiques
-HASH_CMD_START_SCENE = 0x6F46D1D5   # string_hashcode("CmdStartScene")
+# Hash Core3 zone (opcount + STRING_HASHCODE — pas le wrapper legacy 0x0004)
+HASH_CMD_START_SCENE = 0x3AE6DFAE   # string_hashcode("CmdStartScene")
+HASH_CMD_SCENE_READY = 0x43FD1C22   # string_hashcode("CmdSceneReady")
+OP_ZONE_CLIENT_ID    = 0x03
+OP_ZONE_SELECT_CHAR  = 0x02
+OP_ZONE_PERMISSIONS  = 0x04
+OP_ZONE_CMD_START    = 0x09
+OP_ZONE_SCENE_READY  = 0x01
 HASH_SCENE_CREATE    = 0xDDDB9F56   # string_hashcode("SceneCreateObjectByName")
 HASH_SCENE_DESTROY   = 0x4C3D2A07   # string_hashcode("SceneDestroyObject")
 
@@ -251,6 +257,7 @@ class LoginSession:
     username:      str = ""
     galaxies:      List[GalaxyInfo]    = field(default_factory=list)
     characters:    List[CharacterInfo] = field(default_factory=list)
+    selected_character: Optional["CharacterInfo"] = None
 
 # ---------------------------------------------------------------------------
 # Parsers messages Login
@@ -382,10 +389,37 @@ def build_select_character(cluster_id: int, char_struct_id: int) -> bytes:
 
 
 def build_client_id_msg(session_token: str, client_version: str = "20050408-18:00") -> bytes:
+    """Legacy SWGEmu (wrapper 0x0004) — conservé pour référence."""
     return (struct.pack('<H', 0x0004) +
             struct.pack('<I', string_hashcode("ClientIdMsg")) +
             build_ascii(session_token) +
             build_ascii(client_version))
+
+
+def build_client_id_msg_core3(session_token: str, account_id: int,
+                              client_version: str = "20050408-18:00") -> bytes:
+    """Core3 ZoneServer — ClientIdMessage.h (opcount 0x03)."""
+    session_bytes = session_token.encode("ascii")
+    return (struct.pack("<H", OP_ZONE_CLIENT_ID) +
+            struct.pack("<I", _h("ClientIdMsg")) +
+            struct.pack("<I", 0xFE) +
+            struct.pack("<I", len(session_bytes) + 4) +
+            session_bytes +
+            struct.pack("<I", account_id) +
+            build_ascii(client_version))
+
+
+def build_zone_select_character(char_struct_id: int) -> bytes:
+    """Core3 ZoneServer — SelectCharacter.h (opcount 0x02)."""
+    return (struct.pack("<H", OP_ZONE_SELECT_CHAR) +
+            struct.pack("<I", _h("SelectCharacter")) +
+            struct.pack("<Q", char_struct_id) +
+            struct.pack("<I", _h("SWGEmu")))
+
+
+def build_cmd_scene_ready() -> bytes:
+    """Core3 ZoneServer — CmdSceneReady.h (opcount 0x01)."""
+    return struct.pack("<H", OP_ZONE_SCENE_READY) + struct.pack("<I", HASH_CMD_SCENE_READY)
 
 # ---------------------------------------------------------------------------
 # SOEClient — couche transport SOE (UDP)
@@ -502,7 +536,12 @@ class SOEClient:
             return b''
         body = dec[4:-3]
         if dec[-3] == 0x01:
-            body = zlib.decompress(body)
+            for wbits in (-zlib.MAX_WBITS, zlib.MAX_WBITS):
+                try:
+                    body = zlib.decompress(body, wbits)
+                    break
+                except zlib.error:
+                    continue
         return body
 
     def recv(self) -> Optional[Tuple[bytes, bytes]]:
@@ -567,7 +606,9 @@ class SOEClient:
                 assembled = self._frag_buf[:self._frag_total]
                 self._frag_buf   = b''
                 self._frag_total = 0
-                return (soe_op, _unwrap_swg_payload(assembled))
+                if len(assembled) >= 2 and struct.unpack('<H', assembled[0:2])[0] == SWG_MUX_OPCODE:
+                    return (soe_op, _unwrap_swg_payload(assembled))
+                return (soe_op, assembled)
             return None
 
         return None
@@ -776,6 +817,7 @@ def login_phase(args) -> Optional[LoginSession]:
         else:
             print(f"  [Login] WARN: perso '{char_name}' absent — index {idx}")
     char = session.characters[idx]
+    session.selected_character = char
     print(f"\n  Selection personnage [{idx}] : {char.name}")
     client.send(build_select_character(char.cluster_id, char.struct_id))
     time.sleep(0.3)
@@ -788,57 +830,136 @@ def login_phase(args) -> Optional[LoginSession]:
 # Phase ZoneServer  (M1.2b)
 # ---------------------------------------------------------------------------
 
-def zone_connect_phase(session: LoginSession, zone_host: str, zone_port: int) -> Optional[SOEClient]:
+def _zone_message(app_data: bytes) -> Optional[Tuple[int, int, bytes]]:
+    """Extrait (opcount, hash, body) du premier message zone Core3 (ou legacy 0x0004)."""
+    if len(app_data) < 6:
+        return None
+    opcount = struct.unpack("<H", app_data[0:2])[0]
+    msg_hash = struct.unpack("<I", app_data[2:6])[0]
+    return opcount, msg_hash, app_data[6:]
+
+
+def _contains_cmd_start_scene(app_data: bytes) -> bool:
+    blob = _unwrap_swg_payload(app_data)
+    needle = struct.pack("<HI", OP_ZONE_CMD_START, HASH_CMD_START_SCENE)
+    if needle in blob:
+        return True
+    return struct.pack("<HI", SWG_OPCODE_GAME, HASH_CMD_START_SCENE) in blob
+
+
+def _extract_cmd_start_scene(app_data: bytes) -> bytes:
+    blob = _unwrap_swg_payload(app_data)
+    for needle in (
+        struct.pack("<HI", OP_ZONE_CMD_START, HASH_CMD_START_SCENE),
+        struct.pack("<HI", SWG_OPCODE_GAME, HASH_CMD_START_SCENE),
+    ):
+        idx = blob.find(needle)
+        if idx >= 0:
+            return blob[idx:]
+    return app_data
+
+
+def zone_connect_phase(
+    session: LoginSession,
+    zone_host: str,
+    zone_port: int,
+    char: Optional["CharacterInfo"] = None,
+) -> Optional[SOEClient]:
     """
-    M1.2b : Nouveau handshake SOE avec le ZoneServer + ClientIdMsg.
-    Attend SceneCreateObjectByName pour confirmer l'entree en zone.
+    M1.2b : Handshake SOE ZoneServer Core3.
+    ClientIdMsg → ClientPermissionsMessage → SelectCharacter → CmdStartScene → CmdSceneReady.
     """
     print("=" * 60)
     print(f" M1.2b  --  ZoneServer  {zone_host}:{zone_port}")
     print("=" * 60)
 
+    char = char or session.selected_character
+    if char is None and session.characters:
+        char = session.characters[0]
+    if char is None:
+        print("  [Zone] ECHEC : aucun personnage selectionne")
+        return None
+
     zone = SOEClient(zone_host, zone_port, timeout=8.0)
     if not zone.connect():
         return None
 
-    zone.send(build_client_id_msg(session.session_token))
+    zone.send(build_client_id_msg_core3(session.session_token, session.account_id))
     zone.start_netstatus_loop()
-    print("  -> ClientIdMsg envoye")
-    print("  Attente SceneCreateObjectByName ...")
+    print(f"  -> ClientIdMsg Core3 envoye (account={session.account_id})")
+    print(f"  Attente permissions + CmdStartScene (perso {char.name}, oid=0x{char.struct_id:016x}) ...")
 
-    H_SCENE = _h("SceneCreateObjectByName")
+    H_PERMISSIONS = _h("ClientPermissionsMessage")
+    got_permissions = False
+    got_start_scene = False
+    deadline = time.time() + 120.0
 
-    for _ in range(50):
+    while time.time() < deadline:
         result = zone.recv()
         if result is None:
             continue
         _, app_data = result
-        if len(app_data) < 6:
+        parsed = _zone_message(app_data)
+        if parsed is None:
+            continue
+        opcount, msg_hash, body = parsed
+
+        if opcount == OP_ZONE_PERMISSIONS and msg_hash == H_PERMISSIONS:
+            got_permissions = True
+            print("  [Zone] ClientPermissionsMessage recu")
+            zone.send(build_zone_select_character(char.struct_id))
+            print(f"  -> SelectCharacter zone envoye (oid=0x{char.struct_id:016x})")
             continue
 
-        app_op = struct.unpack('<H', app_data[0:2])[0]
-        if app_op != SWG_OPCODE_GAME:
-            continue
-        sub_op = struct.unpack('<I', app_data[2:6])[0]
-        if sub_op != H_SCENE:
-            continue
+        if _contains_cmd_start_scene(app_data):
+            scene_data = _extract_cmd_start_scene(app_data)
+            info = _parse_cmd_start_scene_core3(scene_data)
+            if info.get("obj_id", 0) == 0 and len(scene_data) >= 14:
+                info = _parse_cmd_start_scene(scene_data)
+            planet = info.get("planet", "?")
+            oid = info.get("obj_id", 0)
+            x, y, z = info.get("x", 0), info.get("y", 0), info.get("z", 0)
+            print(f"  [Zone] CmdStartScene  obj=0x{oid:016x}  planet={planet}  "
+                  f"pos=({x:.1f},{y:.1f},{z:.1f})")
+            zone.send(build_cmd_scene_ready())
+            print("  -> CmdSceneReady envoye")
+            got_start_scene = True
+            print("  [Zone] OK connexion ZoneServer etablie\n")
+            return zone
 
-        try:
-            off     = 6
-            tlen    = struct.unpack('<H', app_data[off:off + 2])[0]; off += 2
-            terrain = app_data[off:off + tlen].decode('ascii', errors='replace'); off += tlen
-            slen    = struct.unpack('<H', app_data[off:off + 2])[0]; off += 2
-            scene   = app_data[off:off + slen].decode('ascii', errors='replace')
-        except Exception:
-            terrain, scene = "?", "?"
+        if opcount == OP_ZONE_CMD_START and msg_hash == HASH_CMD_START_SCENE:
+            info = _parse_cmd_start_scene_core3(app_data)
+            planet = info.get("planet", "?")
+            oid = info.get("obj_id", 0)
+            x, y, z = info.get("x", 0), info.get("y", 0), info.get("z", 0)
+            print(f"  [Zone] CmdStartScene  obj=0x{oid:016x}  planet={planet}  "
+                  f"pos=({x:.1f},{y:.1f},{z:.1f})")
+            zone.send(build_cmd_scene_ready())
+            print("  -> CmdSceneReady envoye")
+            got_start_scene = True
+            print("  [Zone] OK connexion ZoneServer etablie\n")
+            return zone
 
-        print(f"  Scene : {scene}  |  Terrain : {terrain}")
-        print("  [Zone] OK connexion ZoneServer etablie\n")
-        return zone
+        # Legacy SWGEmu wrapper 0x0004 + SceneCreateObjectByName
+        if opcount == SWG_OPCODE_GAME and msg_hash == HASH_SCENE_CREATE:
+            try:
+                off = 6
+                tlen = struct.unpack("<H", app_data[off:off + 2])[0]; off += 2
+                terrain = app_data[off:off + tlen].decode("ascii", errors="replace"); off += tlen
+                slen = struct.unpack("<H", app_data[off:off + 2])[0]; off += 2
+                scene = app_data[off:off + slen].decode("ascii", errors="replace")
+            except Exception:
+                terrain, scene = "?", "?"
+            print(f"  Scene : {scene}  |  Terrain : {terrain}")
+            print("  [Zone] OK connexion ZoneServer etablie (legacy SceneCreateObjectByName)\n")
+            return zone
 
-    print("  [Zone] SceneCreateObjectByName non recu (timeout)")
-    print("  -> Mode Delta-only (M1.3 continuera quand meme)\n")
-    return zone
+    if got_permissions and not got_start_scene:
+        print("  [Zone] ECHEC : CmdStartScene non recu (timeout)")
+    elif not got_permissions:
+        print("  [Zone] ECHEC : ClientPermissionsMessage non recu (timeout)")
+    zone.close()
+    return None
 
 # ---------------------------------------------------------------------------
 # M1.3  --  Console Delta
@@ -872,6 +993,33 @@ def _try_coords(data: bytes, offset: int) -> tuple:
     if any(_math.isnan(v) or _math.isinf(v) or abs(v) > 100_000 for v in (x, y, z)):
         return 0.0, 0.0, 0.0, False
     return x, y, z, True
+
+
+def _parse_cmd_start_scene_core3(app_data: bytes) -> dict:
+    """
+    Parse CmdStartScene Core3 (opcount 0x09, hash 0x3AE6DFAE).
+    Format : byte0 + uint64 obj_id + ascii terrain + float3 (X,Z,Y) + ascii template + uint64 time.
+    """
+    result = {"obj_id": 0, "planet": "unknown", "x": 0.0, "y": 0.0, "z": 0.0}
+    try:
+        if len(app_data) < 15:
+            return result
+        off = 7  # opcount(2) + hash(4) + insertByte(0)
+        result["obj_id"] = struct.unpack("<Q", app_data[off:off + 8])[0]
+        off += 8
+        terrain, off = _parse_swg_str(app_data, off)
+        if terrain.startswith("terrain/"):
+            result["planet"] = terrain.split("/")[1].split(".")[0]
+        else:
+            result["planet"] = terrain or "unknown"
+        if off + 12 <= len(app_data):
+            x = struct.unpack("<f", app_data[off:off + 4])[0]
+            z = struct.unpack("<f", app_data[off + 4:off + 8])[0]
+            y = struct.unpack("<f", app_data[off + 8:off + 12])[0]
+            result["x"], result["y"], result["z"] = x, y, z
+    except Exception:
+        pass
+    return result
 
 
 def _parse_cmd_start_scene(app_data: bytes) -> dict:
@@ -1025,10 +1173,24 @@ def delta_console_loop(zone: SOEClient, bridge: Optional["GodotBridge"] = None,
                 pkt_count += 1
 
             # ── M5 : CmdStartScene → joueur connecté ──────────────────────
-            elif app_op == SWG_OPCODE_GAME and len(app_data) >= 6:
-                sub_op = struct.unpack("<I", app_data[2:6])[0]
+            elif len(app_data) >= 6:
+                opcount = struct.unpack("<H", app_data[0:2])[0]
+                msg_hash = struct.unpack("<I", app_data[2:6])[0]
 
-                if sub_op == HASH_CMD_START_SCENE:
+                if opcount == OP_ZONE_CMD_START and msg_hash == HASH_CMD_START_SCENE:
+                    info = _parse_cmd_start_scene_core3(app_data)
+                    oid, planet = info["obj_id"], info["planet"]
+                    x, y, z = info["x"], info["y"], info["z"]
+                    print(f"  [{ts:7.2f}s] 🌍 CmdStartScene  obj=0x{oid:016x}  "
+                          f"planet={planet}  pos=({x:.1f},{y:.1f},{z:.1f})")
+                    if bridge is not None:
+                        bridge.zone_change(planet)
+                        bridge.connect_player(oid, x, y, z, planet)
+                    if on_start_scene is not None:
+                        on_start_scene(oid, x, y, z)
+                    pkt_count += 1
+
+                elif opcount == SWG_OPCODE_GAME and msg_hash == HASH_CMD_START_SCENE:
                     info = _parse_cmd_start_scene(app_data)
                     oid, planet = info["obj_id"], info["planet"]
                     x, y, z    = info["x"], info["y"], info["z"]
@@ -1041,7 +1203,7 @@ def delta_console_loop(zone: SOEClient, bridge: Optional["GodotBridge"] = None,
                         on_start_scene(oid, x, y, z)
                     pkt_count += 1
 
-                elif sub_op == HASH_SCENE_CREATE:
+                elif opcount == SWG_OPCODE_GAME and msg_hash == HASH_SCENE_CREATE:
                     info = _parse_scene_create(app_data)
                     oid  = info["obj_id"]
                     tmpl = info["tmpl"]
@@ -1057,7 +1219,7 @@ def delta_console_loop(zone: SOEClient, bridge: Optional["GodotBridge"] = None,
                     print(f"  [{ts:7.2f}s] ++ Spawn  obj=0x{oid:016x}  {label}  pos=({x:.1f},{y:.1f},{z:.1f})")
                     pkt_count += 1
 
-                elif sub_op == HASH_SCENE_DESTROY:
+                elif opcount == SWG_OPCODE_GAME and msg_hash == HASH_SCENE_DESTROY:
                     if len(app_data) >= 14:
                         oid = struct.unpack("<Q", app_data[6:14])[0]
                         if bridge is not None:
@@ -1183,8 +1345,25 @@ def main():
     zone_port = args.zone_port
 
     if not zone_host or not zone_port:
-        idx    = min(args.char_index, len(session.characters) - 1)
-        target = session.characters[idx].cluster_id
+        char = session.selected_character
+        if char is None:
+            idx = min(args.char_index, len(session.characters) - 1)
+            char_name = (getattr(args, "char_name", None) or "").strip()
+            if char_name:
+                match = next(
+                    (
+                        i
+                        for i, c in enumerate(session.characters)
+                        if c.name.lower() == char_name.lower()
+                        or c.name.lower().split()[0] == char_name.lower()
+                        or char_name.lower() in c.name.lower()
+                    ),
+                    None,
+                )
+                if match is not None:
+                    idx = match
+            char = session.characters[idx]
+        target = char.cluster_id
         galaxy = next((g for g in session.galaxies if g.galaxy_id == target), None)
 
         if galaxy and galaxy.host and galaxy.port:
@@ -1195,7 +1374,8 @@ def main():
             zone_port = ZONE_DEFAULT_PORT
             print(f"[Zone] Adresse non trouvee -> fallback {zone_host}:{zone_port}")
 
-    zone = zone_connect_phase(session, zone_host, zone_port)
+    char = session.selected_character or session.characters[0]
+    zone = zone_connect_phase(session, zone_host, zone_port, char)
     if zone is None:
         print("[Zone] Connexion ZoneServer echouee")
         sys.exit(1)
