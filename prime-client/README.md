@@ -11,6 +11,7 @@ Client 2D pour Core3 Prime. Projet dans `new_mmo/prime-client/`.
 | **M3** | `zone_feed.py --mirror` + bots Lia/Nix/Mira | ✓ |
 | **M4** | Carte + POI + eau/collision + bâtiments .ws | ✓ |
 | **M5** | ZQSD `--play` + `run_m5_play.sh` | ✓ (code) |
+| **M9** | Scrapaltai planète + minimap + carte M | ✅ M9a/b/c |
 
 ## Lancer Godot (M2)
 
@@ -19,6 +20,27 @@ godot4 --path /home/sdesh/projects/new_mmo/prime-client
 ```
 
 Sans snapshots live → **3 ronds demo** (`assets/demo_entities.json`).
+
+## Différenciation joueurs
+
+- **Teintes** : Lia (vert), Nix (bleu), Mira (rose), Teome (bleu officiel)… — `sprite_manifest.json` → `player_tints`
+- **Sprites dédiés** : `player_lia.png`, `player_nix.png`, … (générés par Infographiste, fallback `player_bot.png`)
+- **Hub** : léger écartement (`jitter`) si plusieurs bots au même point
+
+Regénérer overhead strict : voir `Infographiste_IA/pipelines/2d/BACKLOG_sprites_prime.md`.
+
+## Sprites 2D (Infographiste_IA)
+
+Entités : **sprite PNG** si présent dans `assets/sprites/units/`, sinon cercle coloré (fallback).
+
+```bash
+# Générer (ComfyUI + LoRA mmorpg_insp)
+cd ~/projects/Infographiste_IA
+./scripts/generate_sprites_prime_topdown.sh
+./scripts/deploy_sprites_to_prime.sh
+```
+
+Mapping : `config/sprite_manifest.json` — voir `assets/sprites/README.md`.
 
 ## M1 + M2 ensemble (mirroring fichiers)
 

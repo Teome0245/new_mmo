@@ -171,7 +171,7 @@ func _apply_payload(payload: Dictionary) -> void:
 			float(e.get("z", 0.0))
 		)
 		if _em.get_entity(oid) == null:
-			_em.spawn(oid, pos, col, label)
+			_em.spawn(oid, pos, col, label, kind)
 		else:
 			_em.move(oid, pos)
 	for oid: Variant in _managed_oids.keys():

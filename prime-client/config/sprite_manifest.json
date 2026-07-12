@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "display_px": 42,
+  "tint_strength": 0.35,
+  "sprite_scales": {
+    "npc_guard": 0.88,
+    "npc_default": 1.0,
+    "player_bot": 1.0
+  },
+  "sprites": {
+    "player_lia": "res://assets/sprites/units/player_lia.png",
+    "player_nix": "res://assets/sprites/units/player_nix.png",
+    "player_mira": "res://assets/sprites/units/player_mira.png",
+    "player_teome": "res://assets/sprites/units/player_teome.png",
+    "player_gally": "res://assets/sprites/units/player_gally.png",
+    "player_kael": "res://assets/sprites/units/player_kael.png",
+    "player_bot": "res://assets/sprites/units/player_bot.png",
+    "player_official": "res://assets/sprites/units/player_official.png",
+    "npc_default": "res://assets/sprites/units/npc_default.png",
+    "npc_guard": "res://assets/sprites/units/npc_guard.png"
+  },
+  "player_tints": {
+    "lia": "#7dffb8",
+    "nix": "#5ec8ff",
+    "mira": "#ff8ec8",
+    "teome": "#6a9eff",
+    "gally": "#d4b06a",
+    "kael": "#b08cff",
+    "bot_ia": "#88ffaa"
+  },
+  "rules": [
+    { "kind": "player", "name_exact": "lia", "sprite": "player_lia" },
+    { "kind": "player", "name_exact": "nix", "sprite": "player_nix" },
+    { "kind": "player", "name_exact": "mira", "sprite": "player_mira" },
+    { "kind": "player", "name_exact": "teome", "sprite": "player_teome" },
+    { "kind": "player", "name_exact": "gally", "sprite": "player_gally" },
+    { "kind": "player", "name_exact": "kael", "sprite": "player_kael" },
+    {
+      "kind": "player",
+      "name_match": ["lia", "nix", "mira", "gally", "kael", "bot_ia"],
+      "sprite": "player_bot"
+    },
+    { "kind": "player", "sprite": "player_official" },
+    {
+      "kind": "npc",
+      "name_match": ["garde", "sergent", "guard", "mecha", "mechari"],
+      "sprite": "npc_guard"
+    },
+    { "kind": "npc", "sprite": "npc_default" }
+  ]
+}

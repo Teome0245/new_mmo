@@ -11,6 +11,8 @@
 [ext_resource type="Script" path="res://scripts/zone_layers.gd" id="8_zones"]
 [ext_resource type="Script" path="res://scripts/ws_objects_layer.gd" id="9_ws"]
 [ext_resource type="Script" path="res://scripts/hub_buildings_layer.gd" id="10_hub"]
+[ext_resource type="PackedScene" path="res://scenes/ui/minimap_hud.tscn" id="11_mm"]
+[ext_resource type="PackedScene" path="res://scenes/ui/planet_map_panel.tscn" id="12_pmap"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.05, 0.05, 0.1, 0.78)
@@ -111,3 +113,7 @@ theme_override_colors/font_color = Color(0.4, 1, 0.5, 1)
 theme_override_font_sizes/font_size = 14
 text = "STANDING"
 horizontal_alignment = 1
+
+[node name="MinimapHud" parent="UI" instance=ExtResource("11_mm")]
+
+[node name="PlanetMapPanel" parent="UI" instance=ExtResource("12_pmap")]

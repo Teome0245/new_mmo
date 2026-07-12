@@ -55,6 +55,9 @@ func _load_play_cfg() -> void:
 func set_player_id(obj_id: int) -> void:
 	_player_id = obj_id
 
+func get_player_id() -> int:
+	return _player_id
+
 func _process(_delta: float) -> void:
 	if not enabled:
 		return
@@ -102,6 +105,9 @@ func _send(obj: Dictionary) -> void:
 
 func send_initial_position(x: float, y: float, z: float) -> void:
 	_send({"t": "pos", "x": x, "y": y, "z": z})
+
+func request_move_to(x: float, z: float) -> void:
+	_send({"t": "goto", "x": x, "z": z, "y": 0.0})
 
 func _exit_tree() -> void:
 	_send({"t": "stop"})

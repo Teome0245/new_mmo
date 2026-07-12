@@ -15,20 +15,33 @@ func _ready() -> void:
 
 func spawn(object_id: int, core3_pos: Vector3,
 		color: Color = Entity.COLOR_NPC,
-		label: String = "") -> Entity:
+		label: String = "",
+		kind: String = "object") -> Entity:
 	if _entities.has(object_id):
 		return _entities[object_id]
 	if _entity_packed == null:
 		return null
 	var entity: Entity = _entity_packed.instantiate()
 	entity.object_id = object_id
+	add_child(entity)
+	entity.set_display_jitter(_jitter_for_oid(object_id))
 	entity.set_core3_position(core3_pos)
 	entity.set_color(color)
+	var tex := SpriteRegistry.resolve_texture(kind, label)
+	var tint := SpriteRegistry.resolve_tint(kind, label)
+	if tex:
+		entity.set_sprite_texture(tex, tint)
 	if label != "":
 		entity.set_label(label)
-	add_child(entity)
 	_entities[object_id] = entity
 	return entity
+
+static func _jitter_for_oid(oid: int) -> Vector2:
+	# Écarte légèrement les entités au même point (hub LH)
+	var angle := float(oid % 360) * (PI / 180.0)
+	var ring := float(oid % 4)
+	var radius := 14.0 + ring * 8.0
+	return Vector2(cos(angle), sin(angle)) * radius
 
 func move(object_id: int, core3_pos: Vector3) -> void:
 	if not _entities.has(object_id):
@@ -51,3 +64,6 @@ func get_entity(object_id: int) -> Entity:
 
 func count() -> int:
 	return _entities.size()
+
+func get_all_entities() -> Array:
+	return _entities.values()

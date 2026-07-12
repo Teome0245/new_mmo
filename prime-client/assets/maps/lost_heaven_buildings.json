@@ -5,42 +5,115 @@
     "x": 4749.0,
     "z": -737.0
   },
+  "exported_at": "2026-07-12T15:46:59.178721+00:00",
   "buildings": [
     {
-      "id": "poi:lost_heaven_market",
-      "kind": "shops",
-      "label": "Bazar",
-      "x": 4749.0,
-      "z": -737.0,
-      "size_m": 48,
+      "id": "poi:lost_heaven_starport",
+      "kind": "starport_shuttle",
+      "label": "Port shuttle",
+      "x": 4809.0,
+      "z": -802.0,
+      "size_m": 36.0,
       "essential": true
+    },
+    {
+      "id": "poi:lost_heaven_cantina",
+      "kind": "cantina",
+      "label": "Cantina",
+      "x": 4939.0,
+      "z": -802.0,
+      "size_m": 32.0,
+      "essential": false
     },
     {
       "id": "poi:lost_heaven_bank",
       "kind": "bank",
       "label": "Banque",
+      "x": 4679.0,
+      "z": -802.0,
+      "size_m": 40.0,
+      "essential": true
+    },
+    {
+      "id": "poi:lost_heaven_inn",
+      "kind": "inn",
+      "label": "Auberge",
+      "x": 4809.0,
+      "z": -672.0,
+      "size_m": 32.0,
+      "essential": false
+    },
+    {
+      "id": "poi:lost_heaven_market",
+      "kind": "shops",
+      "label": "Marché / commerces",
+      "x": 4809.0,
+      "z": -932.0,
+      "size_m": 48.0,
+      "essential": true
+    },
+    {
+      "id": "poi:lost_heaven_training_hall",
+      "kind": "trainers_combat",
+      "label": "Hall d'entraînement",
+      "x": 4939.0,
+      "z": -672.0,
+      "size_m": 36.0,
+      "essential": false
+    },
+    {
+      "id": "poi:lost_heaven_clinic",
+      "kind": "clinic",
+      "label": "Clinique",
+      "x": 4679.0,
+      "z": -672.0,
+      "size_m": 28.0,
+      "essential": false
+    },
+    {
+      "id": "poi:lost_heaven_mission_post",
+      "kind": "mission_terminal",
+      "label": "Bureau des missions",
+      "x": 4939.0,
+      "z": -932.0,
+      "size_m": 24.0,
+      "essential": false
+    },
+    {
+      "id": "poi:lost_heaven_town_hall",
+      "kind": "town_hall",
+      "label": "Mairie",
+      "x": 4679.0,
+      "z": -932.0,
+      "size_m": 40.0,
+      "essential": false
+    },
+    {
+      "id": "poi:lost_heaven_artisan_hall",
+      "kind": "trainer_artisan",
+      "label": "Atelier artisan",
+      "x": 5069.0,
+      "z": -802.0,
+      "size_m": 28.0,
+      "essential": false
+    },
+    {
+      "id": "poi:lost_heaven_housing_npc",
+      "kind": "npc_housing_block",
+      "label": "Logements PNJ",
       "x": 4549.0,
-      "z": -737.0,
-      "size_m": 40,
-      "essential": true
+      "z": -802.0,
+      "size_m": 24.0,
+      "essential": false
     },
     {
-      "id": "poi:lost_heaven_blue_frog",
-      "kind": "terminal",
-      "label": "Blue Frog",
-      "x": 4799.0,
-      "z": -787.0,
-      "size_m": 10,
-      "essential": true
-    },
-    {
-      "id": "poi:lost_heaven_starport",
-      "kind": "starport_shuttle",
-      "label": "Starport",
-      "x": 4749.0,
-      "z": -537.0,
-      "size_m": 36,
-      "essential": true
+      "id": "poi:lost_heaven_gate",
+      "kind": "city_gate",
+      "label": "Porte / palissade",
+      "x": 4809.0,
+      "z": -1062.0,
+      "size_m": 64.0,
+      "essential": false
     }
   ]
 }

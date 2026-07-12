@@ -155,9 +155,9 @@ func _update_info() -> void:
 		)
 	if stats_label:
 		if _play_mode:
-			stats_label.text = "[ZQSD] joueur  [Shift] run  [Espace] saut  [Ctrl+M] carte  [Esc] quit"
+			stats_label.text = "[ZQSD] joueur  [Shift] run  [M] minimap  [Ctrl+M] carte  [Esc] quit"
 		else:
-			stats_label.text = "[H] hub LH  [F1/F2/F3] bots  [Ctrl+M] carte  [Ctrl+P] POI  [Ctrl+H] bât.  [Esc] quit"
+			stats_label.text = "[H] hub LH  [F1/F2/F3] bots  [M] minimap  [Ctrl+M] carte  [Ctrl+P] POI  [Esc] quit"
 
 # ---------------------------------------------------------------------------
 # API reseau — appelee par NetworkBridge
