@@ -102,6 +102,8 @@ STRING_HASH_TABLE = [
 # Opcodes applicatifs SWG
 # ---------------------------------------------------------------------------
 SWG_OPCODE_GAME = 0x0004   # opcode générique messages login + zone
+SWG_LOGIN_OPCODES = frozenset({0x0002, 0x0003, 0x0004})
+SWG_MUX_OPCODE = 0x1900
 SWG_DELTA       = 0x000F   # DeltaMessage — mise à jour partielle objet
 SWG_BASELINE    = 0x0016   # BaselineMessage — état initial objet
 SWG_OBJ_CTRL   = 0x001B   # ObjectControllerMessage
@@ -315,13 +317,14 @@ def parse_login_cluster_status(body: bytes, session: LoginSession) -> None:
             alen = struct.unpack('<H', body[off:off + 2])[0]; off += 2
             addr = body[off:off + alen].decode('ascii', errors='replace'); off += alen
             port = struct.unpack('<H', body[off:off + 2])[0]; off += 2
-            status = struct.unpack('<I', body[off:off + 4])[0]; off += 4
-            off += 20   # skip timezone + 4 pop fields
+            ping_port = struct.unpack('<H', body[off:off + 2])[0]; off += 2
+            pop = struct.unpack('<I', body[off:off + 4])[0]; off += 4
+            off += 4 + 4 + 4 + 4 + 1  # timezone, flags, status, byte
             g = _galaxy_by_id(session, gid)
             g.host   = addr
             g.port   = port
-            g.status = status
-            print(f"      {g}")
+            g.status = pop
+            print(f"      {g} ping={ping_port}")
     except Exception as e:
         print(f"  [LoginClusterStatus] parse error: {e} | raw: {body[:48].hex()}")
         print(f"  → utilisez --zone-host / --zone-port pour forcer l'adresse ZS")
@@ -333,13 +336,26 @@ def parse_enumerate_character_id(body: bytes, session: LoginSession) -> None:
         print(f"  [EnumerateCharacterId] {count} personnage(s)")
         off = 4
         for i in range(count):
-            nlen      = struct.unpack('<I', body[off:off + 4])[0]; off += 4
-            name      = body[off:off + nlen * 2].decode('utf-16-le', errors='replace'); off += nlen * 2
-            struct_id = struct.unpack('<Q', body[off:off + 8])[0]; off += 8
-            cluster_id= struct.unpack('<I', body[off:off + 4])[0]; off += 4
-            char_id   = struct.unpack('<I', body[off:off + 4])[0]; off += 4
-            ch = CharacterInfo(name=name, struct_id=struct_id,
-                               cluster_id=cluster_id, char_id=char_id)
+            nlen = struct.unpack('<I', body[off:off + 4])[0]
+            off += 4
+            name = body[off:off + nlen * 2].decode('utf-16-le', errors='replace')
+            off += nlen * 2
+            _race_crc = struct.unpack('<I', body[off:off + 4])[0]
+            off += 4
+            struct_id = struct.unpack('<Q', body[off:off + 8])[0]
+            off += 8
+            cluster_id = struct.unpack('<I', body[off:off + 4])[0]
+            off += 4
+            char_type = struct.unpack('<I', body[off:off + 4])[0]
+            off += 4
+            # Nettoyer suffixes couleur SWG (ex. " \\#FF0000(BANNED)")
+            clean_name = name.split(" \\#")[0].strip()
+            ch = CharacterInfo(
+                name=clean_name,
+                struct_id=struct_id,
+                cluster_id=cluster_id,
+                char_id=char_type,
+            )
             session.characters.append(ch)
             print(f"      [{i}] {ch}")
     except Exception as e:
@@ -532,18 +548,8 @@ class SOEClient:
             srv_seq  = struct.unpack('>H', dec[2:4])[0]
             self._ack(srv_seq)
             payload = self._unpack_channel_body(dec)
-            if len(payload) >= 2 and payload[0:2] == b'\x19\x00':
-                out = b''
-                off = 2
-                while off < len(payload):
-                    blk = payload[off]
-                    off += 1
-                    if blk == 0xFF and off + 1 < len(payload):
-                        blk = struct.unpack('>H', payload[off:off + 2])[0]
-                        off += 2
-                    out += payload[off:off + blk]
-                    off += blk
-                return (soe_op, out)
+            if len(payload) >= 2 and struct.unpack('<H', payload[0:2])[0] == SWG_MUX_OPCODE:
+                return (soe_op, _unwrap_swg_payload(payload))
             return (soe_op, payload)
 
         if soe_op in (self._OP_FRAG_DATA, b'\x0d\x00'):
@@ -561,9 +567,7 @@ class SOEClient:
                 assembled = self._frag_buf[:self._frag_total]
                 self._frag_buf   = b''
                 self._frag_total = 0
-                if assembled and assembled[0:2] == b'\x19\x00':
-                    return (soe_op, assembled)
-                return (soe_op, assembled)
+                return (soe_op, _unwrap_swg_payload(assembled))
             return None
 
         return None
@@ -622,7 +626,8 @@ def _login_message_body_len(sub_op: int, body: bytes) -> int:
                 if off + 8 > len(body):
                     break
                 alen = struct.unpack('<H', body[off + 4:off + 6])[0]
-                off += 4 + 2 + alen + 2 + 4 + 20
+                # gid(4) + addr_len(2) + addr + port(2) + ping(2) + pop block(21)
+                off += 4 + 2 + alen + 2 + 2 + 4 + 4 + 4 + 4 + 4 + 1
             return min(len(body), off)
         if sub_op == _h("EnumerateCharacterId") and len(body) >= 4:
             count = struct.unpack('<I', body[0:4])[0]
@@ -631,17 +636,39 @@ def _login_message_body_len(sub_op: int, body: bytes) -> int:
                 if off + 4 > len(body):
                     break
                 nlen = struct.unpack('<I', body[off:off + 4])[0]
-                off += 4 + nlen * 2 + 8 + 4 + 4
+                # Unicode + race_crc(4) + object_id(8) + galaxy_id(4) + char_type(4)
+                off += 4 + nlen * 2 + 4 + 8 + 4 + 4
             return min(len(body), off)
     except Exception:
         pass
     return len(body)
 
 
+def _unwrap_swg_payload(payload: bytes) -> bytes:
+    """Démultiplexe un buffer 0x1900 (blocs length-prefixed) en flux SWG concaténé."""
+    if len(payload) < 2 or struct.unpack('<H', payload[0:2])[0] != SWG_MUX_OPCODE:
+        return payload
+    out = b''
+    off = 2
+    while off < len(payload):
+        blk = payload[off]
+        off += 1
+        if blk == 0xFF and off + 1 < len(payload):
+            blk = struct.unpack('>H', payload[off:off + 2])[0]
+            off += 2
+        if blk <= 0 or off + blk > len(payload):
+            break
+        out += payload[off:off + blk]
+        off += blk
+    return out
+
+
 def _iter_login_messages(blob: bytes):
+    blob = _unwrap_swg_payload(blob)
     off = 0
     while off + 6 <= len(blob):
-        if struct.unpack('<H', blob[off:off + 2])[0] != SWG_OPCODE_GAME:
+        app_op = struct.unpack('<H', blob[off:off + 2])[0]
+        if app_op not in SWG_LOGIN_OPCODES:
             off += 1
             continue
         sub_op = struct.unpack('<I', blob[off + 2:off + 6])[0]
@@ -679,7 +706,7 @@ def login_phase(args) -> Optional[LoginSession]:
     print(" M1.1 + M1.2a  --  LoginServer")
     print("=" * 60)
 
-    client = SOEClient(args.host, args.port)
+    client = SOEClient(args.host, args.port, timeout=15.0)
     client._debug = getattr(args, 'debug', False)
     if not client.connect():
         return None
@@ -731,7 +758,23 @@ def login_phase(args) -> Optional[LoginSession]:
         client.close()
         return session
 
-    idx  = min(args.char_index, len(session.characters) - 1)
+    idx = min(args.char_index, len(session.characters) - 1)
+    char_name = (getattr(args, "char_name", None) or "").strip()
+    if char_name:
+        match = next(
+            (
+                i
+                for i, c in enumerate(session.characters)
+                if c.name.lower() == char_name.lower()
+                or c.name.lower().split()[0] == char_name.lower()
+                or char_name.lower() in c.name.lower()
+            ),
+            None,
+        )
+        if match is not None:
+            idx = match
+        else:
+            print(f"  [Login] WARN: perso '{char_name}' absent — index {idx}")
     char = session.characters[idx]
     print(f"\n  Selection personnage [{idx}] : {char.name}")
     client.send(build_select_character(char.cluster_id, char.struct_id))
@@ -1106,6 +1149,8 @@ def main():
                         help="Mot de passe")
     parser.add_argument("--char",       type=int, default=0, dest="char_index",
                         help="Index du personnage (0 = premier)")
+    parser.add_argument("--char-name",  default="",
+                        help="Nom du personnage (ex. Lia) — prioritaire sur --char")
     parser.add_argument("--zone-host",  default="",
                         help="ZoneServer host (auto si vide)")
     parser.add_argument("--zone-port",  type=int, default=0,
