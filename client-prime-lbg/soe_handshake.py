@@ -258,6 +258,7 @@ class LoginSession:
     galaxies:      List[GalaxyInfo]    = field(default_factory=list)
     characters:    List[CharacterInfo] = field(default_factory=list)
     selected_character: Optional["CharacterInfo"] = None
+    zone_scene:    Optional[dict] = None
 
 # ---------------------------------------------------------------------------
 # Parsers messages Login
@@ -859,6 +860,73 @@ def _extract_cmd_start_scene(app_data: bytes) -> bytes:
     return app_data
 
 
+def _record_zone_scene(session: LoginSession, info: dict) -> None:
+    session.zone_scene = dict(info)
+
+
+def _finalize_zone_scene(session: LoginSession, info: dict, zone: SOEClient) -> SOEClient:
+    _record_zone_scene(session, info)
+    planet = info.get("planet", "?")
+    oid = info.get("obj_id", 0)
+    x, y, z = info.get("x", 0), info.get("y", 0), info.get("z", 0)
+    print(f"  [Zone] CmdStartScene  obj=0x{oid:016x}  planet={planet}  "
+          f"pos=({x:.1f},{y:.1f},{z:.1f})")
+    zone.send(build_cmd_scene_ready())
+    print("  -> CmdSceneReady envoye")
+    print("  [Zone] OK connexion ZoneServer etablie\n")
+    return zone
+
+
+def _run_play_probe(
+    zone: SOEClient,
+    session: LoginSession,
+    godot_port: int,
+    cmd_port: int,
+    probe_s: float,
+) -> bool:
+    """Démarre prime_controller brièvement (sonde M5 headless)."""
+    scene = session.zone_scene or {}
+    oid = int(scene.get("obj_id", 0) or 0)
+    if not oid:
+        print("  [--play-only] ECHEC : zone_scene absent")
+        return False
+    try:
+        from prime_controller import PlayerController as PhysController, CommandServer, GodotBridge
+    except ImportError as e:
+        print(f"  [--play-only] prime_controller indisponible: {e}")
+        return False
+
+    bridge = GodotBridge(godot_port) if godot_port > 0 else None
+    play_stop = threading.Event()
+    ctrl = PhysController(zone, oid, bridge)
+    ctrl.set_position(
+        float(scene.get("x", 0)),
+        float(scene.get("y", 0)),
+        float(scene.get("z", 0)),
+    )
+    cmd = CommandServer(ctrl, cmd_port)
+    threading.Thread(target=ctrl.run_loop, args=(play_stop,), daemon=True, name="play-phys").start()
+    threading.Thread(target=cmd.run, args=(play_stop,), daemon=True, name="play-cmd").start()
+    print(f"  [--play] Contrôleur actif obj=0x{oid:016x}  cmd=:{cmd_port}")
+
+    probe_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        probe_sock.sendto(
+            json.dumps({"t": "fwd", "active": True}).encode("utf-8"),
+            ("127.0.0.1", cmd_port),
+        )
+        time.sleep(max(1.0, probe_s))
+        probe_sock.sendto(json.dumps({"t": "stop"}).encode("utf-8"), ("127.0.0.1", cmd_port))
+    finally:
+        probe_sock.close()
+
+    play_stop.set()
+    time.sleep(0.25)
+    if bridge is not None:
+        bridge.close()
+    return True
+
+
 def zone_connect_phase(
     session: LoginSession,
     zone_host: str,
@@ -916,29 +984,11 @@ def zone_connect_phase(
             info = _parse_cmd_start_scene_core3(scene_data)
             if info.get("obj_id", 0) == 0 and len(scene_data) >= 14:
                 info = _parse_cmd_start_scene(scene_data)
-            planet = info.get("planet", "?")
-            oid = info.get("obj_id", 0)
-            x, y, z = info.get("x", 0), info.get("y", 0), info.get("z", 0)
-            print(f"  [Zone] CmdStartScene  obj=0x{oid:016x}  planet={planet}  "
-                  f"pos=({x:.1f},{y:.1f},{z:.1f})")
-            zone.send(build_cmd_scene_ready())
-            print("  -> CmdSceneReady envoye")
-            got_start_scene = True
-            print("  [Zone] OK connexion ZoneServer etablie\n")
-            return zone
+            return _finalize_zone_scene(session, info, zone)
 
         if opcount == OP_ZONE_CMD_START and msg_hash == HASH_CMD_START_SCENE:
             info = _parse_cmd_start_scene_core3(app_data)
-            planet = info.get("planet", "?")
-            oid = info.get("obj_id", 0)
-            x, y, z = info.get("x", 0), info.get("y", 0), info.get("z", 0)
-            print(f"  [Zone] CmdStartScene  obj=0x{oid:016x}  planet={planet}  "
-                  f"pos=({x:.1f},{y:.1f},{z:.1f})")
-            zone.send(build_cmd_scene_ready())
-            print("  -> CmdSceneReady envoye")
-            got_start_scene = True
-            print("  [Zone] OK connexion ZoneServer etablie\n")
-            return zone
+            return _finalize_zone_scene(session, info, zone)
 
         # Legacy SWGEmu wrapper 0x0004 + SceneCreateObjectByName
         if opcount == SWG_OPCODE_GAME and msg_hash == HASH_SCENE_CREATE:
@@ -1327,6 +1377,8 @@ def main():
                         help="Arreter apres login (ne pas connecter au ZoneServer)")
     parser.add_argument("--zone-only", action="store_true",
                         help="Arreter apres connexion zone (sonde M3b, sans boucle delta)")
+    parser.add_argument("--play-only", action="store_true",
+                        help="Zone + prime_controller court (sonde M5, sans boucle delta)")
     parser.add_argument("--debug",      action="store_true",
                         help="Logs SOE (CRC, paquets recus)")
     args = parser.parse_args()
@@ -1383,6 +1435,15 @@ def main():
         sys.exit(1)
 
     if args.zone_only:
+        zone.close()
+        sys.exit(0)
+
+    if args.play_only:
+        probe_s = float(os.environ.get("LBG_SOE_M5_PLAY_PROBE_S", "4"))
+        gport = args.godot_port if args.godot_port > 0 else 0
+        if not _run_play_probe(zone, session, gport, args.cmd_port, probe_s):
+            zone.close()
+            sys.exit(1)
         zone.close()
         sys.exit(0)
 
