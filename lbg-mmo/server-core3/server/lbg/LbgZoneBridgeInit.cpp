@@ -37,6 +37,7 @@ int tickIntervalMs() {
 
 void startZoneBridgeTick(ZoneServer* zone_server) {
     ensureReadOnlyZoneBridge();
+    bindReadOnlyZoneBridgeServer(zone_server);
     LbgZoneBridge* bridge = lbgZoneBridgeInstance();
     if (bridge == nullptr || !bridge->enabled() || zone_server == nullptr) {
         return;

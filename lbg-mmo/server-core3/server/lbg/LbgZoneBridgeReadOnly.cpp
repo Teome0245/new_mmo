@@ -1,6 +1,9 @@
-// LbgZoneBridgeReadOnly.cpp — ZB-0 impl lecture seule (tick + delta vide)
+// LbgZoneBridgeReadOnly.cpp — ZB-0/1 impl lecture seule (tick + collecte entités)
 
 #include "server/lbg/LbgZoneBridge.h"
+#include "server/lbg/LbgZoneBridgeCollect.h"
+
+#include "server/zone/ZoneServer.h"
 
 #include <atomic>
 #include <cstdlib>
@@ -22,9 +25,14 @@ bool bridgeEnabledFromEnv() {
 class ReadOnlyZoneBridge : public LbgZoneBridge {
     std::atomic<uint64_t> tick_{0};
     std::string last_zone_;
+    ZoneServer* zone_server_{nullptr};
     mutable std::mutex zone_mu_;
 
 public:
+    void setZoneServer(ZoneServer* zone_server) {
+        zone_server_ = zone_server;
+    }
+
     void onZoneTick(const std::string& zone_name) override {
         tick_.fetch_add(1, std::memory_order_relaxed);
         std::lock_guard<std::mutex> lock(zone_mu_);
@@ -32,10 +40,18 @@ public:
     }
 
     ZoneDelta collectReadOnlyDelta() const override {
+        std::string zone_copy;
+        const uint64_t tick = tick_.load(std::memory_order_relaxed);
+        {
+            std::lock_guard<std::mutex> lock(zone_mu_);
+            zone_copy = last_zone_;
+        }
+        if (zone_server_ != nullptr) {
+            return collectZoneDeltaFromServer(zone_server_, tick, zone_copy);
+        }
         ZoneDelta delta;
-        delta.tick = tick_.load(std::memory_order_relaxed);
-        std::lock_guard<std::mutex> lock(zone_mu_);
-        delta.zone_name = last_zone_;
+        delta.tick = tick;
+        delta.zone_name = zone_copy;
         return delta;
     }
 
@@ -50,6 +66,10 @@ ReadOnlyZoneBridge g_readonly_bridge;
 
 void ensureReadOnlyZoneBridge() {
     setLbgZoneBridge(&g_readonly_bridge);
+}
+
+void bindReadOnlyZoneBridgeServer(ZoneServer* zone_server) {
+    g_readonly_bridge.setZoneServer(zone_server);
 }
 
 }  // namespace zonebridge

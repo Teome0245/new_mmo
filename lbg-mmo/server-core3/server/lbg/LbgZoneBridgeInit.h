@@ -7,6 +7,7 @@ namespace lbg {
 namespace zonebridge {
 
 void ensureReadOnlyZoneBridge();
+void bindReadOnlyZoneBridgeServer(ZoneServer* zone_server);
 void startZoneBridgeTick(ZoneServer* zone_server);
 
 }  // namespace zonebridge
