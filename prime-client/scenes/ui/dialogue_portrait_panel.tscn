@@ -1,0 +1,53 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue_portrait_panel.gd" id="1_dialogue"]
+[ext_resource type="Theme" path="res://themes/prime_ui.tres" id="2_theme"]
+
+[node name="DialoguePortraitPanel" type="PanelContainer"]
+visible = false
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -208.0
+offset_right = 408.0
+offset_bottom = -16.0
+grow_vertical = 0
+theme = ExtResource("2_theme")
+script = ExtResource("1_dialogue")
+
+[node name="Root" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PortraitWrap" type="PanelContainer" parent="Root"]
+layout_mode = 2
+
+[node name="Portrait" type="TextureRect" parent="Root/PortraitWrap"]
+layout_mode = 2
+custom_minimum_size = Vector2(96, 96)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VBox" type="VBoxContainer" parent="Root"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Root/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Portrait dialogue"
+
+[node name="Body" type="Label" parent="Root/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 72)
+theme_override_font_sizes/font_size = 12
+text = "Fenêtre portrait prête."
+autowrap_mode = 3
+
+[node name="Hint" type="Label" parent="Root/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "P fermer · O expression suivante · hotbar chat = démo"

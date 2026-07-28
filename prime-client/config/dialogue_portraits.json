@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "layout": {
+    "anchor": "bottom_left",
+    "width": 248,
+    "height": 180
+  },
+  "portraits": {
+    "player_human_neutral": "res://assets/ui/portraits/player_human/neutral.png",
+    "player_human_happy": "res://assets/ui/portraits/player_human/happy.png",
+    "player_human_angry": "res://assets/sprites/units/player_human.svg",
+    "player_human_sad": "res://assets/sprites/units/player_human.svg",
+    "player_human_surprised": "res://assets/sprites/units/player_human.svg",
+    "player_human_determined": "res://assets/ui/portraits/player_human/determined.png",
+    "player_human_talk_1": "res://assets/ui/portraits/player_human/talk_1.png",
+    "player_human_talk_2": "res://assets/ui/portraits/player_human/talk_2.png",
+    "npc_bartender_neutral": "res://assets/ui/portraits/npc_bartender/neutral.png",
+    "npc_bartender_happy": "res://assets/ui/portraits/npc_bartender/happy.png",
+    "npc_bartender_angry": "res://assets/sprites/units/npc_bartender.svg",
+    "npc_bartender_talk_1": "res://assets/ui/portraits/npc_bartender/talk_1.png",
+    "npc_bartender_talk_2": "res://assets/ui/portraits/npc_bartender/talk_2.png",
+    "npc_guide_neutral": "res://assets/ui/portraits/npc_guide/neutral.png",
+    "npc_guide_happy": "res://assets/ui/portraits/npc_guide/happy.png",
+    "npc_guide_determined": "res://assets/ui/portraits/npc_guide/determined.png",
+    "npc_guide_talk_1": "res://assets/ui/portraits/npc_guide/talk_1.png",
+    "npc_guide_talk_2": "res://assets/ui/portraits/npc_guide/talk_2.png",
+    "npc_merchant_neutral": "res://assets/sprites/units/npc_merchant.svg",
+    "npc_merchant_happy": "res://assets/sprites/units/npc_merchant.svg",
+    "npc_trainer_neutral": "res://assets/sprites/units/npc_trainer.svg",
+    "npc_trainer_angry": "res://assets/sprites/units/npc_trainer.svg",
+    "npc_trainer_determined": "res://assets/sprites/units/npc_trainer.svg",
+    "npc_civilian_neutral": "res://assets/sprites/units/npc_civilian.svg",
+    "npc_civilian_happy": "res://assets/sprites/units/npc_civilian.svg",
+    "npc_civilian_sad": "res://assets/sprites/units/npc_civilian.svg",
+    "npc_default_neutral": "res://assets/sprites/units/npc_civilian.svg"
+  },
+  "fallbacks": {
+    "default_expression": "neutral",
+    "default_player": "player_human_neutral",
+    "default_npc": "npc_default_neutral"
+  },
+  "rules": [
+    {
+      "kind": "player",
+      "name_match": [
+        "voyageur",
+        "humain",
+        "you"
+      ],
+      "portrait_base": "player_human"
+    },
+    {
+      "kind": "npc",
+      "role_match": [
+        "bartender",
+        "host",
+        "performer",
+        "patron",
+        "cantina_fallback"
+      ],
+      "portrait_base": "npc_bartender"
+    },
+    {
+      "kind": "npc",
+      "role_match": [
+        "guide",
+        "quest_giver",
+        "archivist",
+        "rumormonger",
+        "pilot",
+        "traffic"
+      ],
+      "portrait_base": "npc_guide"
+    },
+    {
+      "kind": "npc",
+      "role_match": [
+        "merchant",
+        "resident"
+      ],
+      "portrait_base": "npc_merchant"
+    },
+    {
+      "kind": "npc",
+      "role_match": [
+        "combat_trainer",
+        "medic_trainer",
+        "scout_trainer",
+        "artisan_trainer",
+        "politician_trainer",
+        "entertainer_trainer"
+      ],
+      "portrait_base": "npc_trainer"
+    },
+    {
+      "kind": "npc",
+      "role_match": [
+        "guard",
+        "bouncer",
+        "sergeant",
+        "guard_fallback"
+      ],
+      "portrait_base": "npc_civilian"
+    },
+    {
+      "kind": "npc",
+      "portrait_base": "npc_civilian"
+    }
+  ]
+}

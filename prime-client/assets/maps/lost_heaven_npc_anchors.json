@@ -1,0 +1,405 @@
+{
+  "schema_version": 1,
+  "hub": "lost_heaven",
+  "anchor": {
+    "x": 4749.0,
+    "z": -737.0
+  },
+  "notes": "Ancrage client-side des PNJ aux POI bâtiments. Ne modifie pas le feed Core3. Si apply_visual_override=true, la position d'affichage est building + offset (après normalize_core3_pos). Idle bob + micro-patrol sont purement cosmétiques.",
+  "behavior_defaults": {
+    "idle_bob": {
+      "enabled": false,
+      "amplitude_px": 2.5,
+      "period_s": 2.4,
+      "axis": "y"
+    },
+    "patrol": {
+      "enabled": false,
+      "mode": "orbit",
+      "radius_m": 4.0,
+      "speed_m_s": 0.55,
+      "pause_at_waypoint_s": 1.2,
+      "waypoints_relative": []
+    },
+    "seed": {
+      "source": "pilot_id",
+      "salt": "lost_heaven_v1"
+    }
+  },
+  "match_rules": {
+    "priority": ["pilot_id", "lbg_npc_id", "name_pattern"],
+    "pilot_id_normalize": "strip_npc_prefix_dup",
+    "name_pattern_flags": "i"
+  },
+  "anchors": [
+    {
+      "id": "anchor:barman_jax",
+      "match": { "pilot_id": "npc:core3_barman_jax" },
+      "building_id": "poi:lost_heaven_cantina",
+      "role": "bartender",
+      "poi_slot": "counter",
+      "offset_m": { "x": -6.0, "z": 4.0 },
+      "apply_visual_override": true,
+      "idle_bob": { "amplitude_px": 1.5, "period_s": 2.8 },
+      "patrol": { "enabled": false }
+    },
+    {
+      "id": "anchor:habitue_cantina",
+      "match": { "pilot_id": "npc:core3_habitue_cantina" },
+      "building_id": "poi:lost_heaven_cantina",
+      "role": "patron",
+      "poi_slot": "patio",
+      "offset_m": { "x": -18.0, "z": 22.0 },
+      "apply_visual_override": true,
+      "idle_bob": { "amplitude_px": 2.0, "period_s": 2.6 },
+      "patrol": {
+        "mode": "waypoints",
+        "speed_m_s": 0.4,
+        "pause_at_waypoint_s": 2.5,
+        "waypoints_relative": [
+          { "x": 0.0, "z": 0.0 },
+          { "x": 6.0, "z": -3.0 },
+          { "x": -4.0, "z": 5.0 }
+        ]
+      }
+    },
+    {
+      "id": "anchor:maitre_salle",
+      "match": { "pilot_id": "npc:core3_maitre_salle" },
+      "building_id": "poi:lost_heaven_cantina",
+      "role": "host",
+      "poi_slot": "door",
+      "offset_m": { "x": -14.0, "z": 18.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 3.0,
+        "speed_m_s": 0.35,
+        "pause_at_waypoint_s": 1.8
+      }
+    },
+    {
+      "id": "anchor:artiste_scene",
+      "match": { "pilot_id": "npc:core3_artiste_scene" },
+      "building_id": "poi:lost_heaven_cantina",
+      "role": "performer",
+      "poi_slot": "stage",
+      "offset_m": { "x": 8.0, "z": 10.0 },
+      "apply_visual_override": true,
+      "idle_bob": { "amplitude_px": 3.5, "period_s": 1.8 },
+      "patrol": { "enabled": false }
+    },
+    {
+      "id": "anchor:videur",
+      "match": { "pilot_id": "npc:core3_videur" },
+      "building_id": "poi:lost_heaven_cantina",
+      "role": "bouncer",
+      "poi_slot": "door",
+      "offset_m": { "x": -20.0, "z": 20.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 2.5,
+        "speed_m_s": 0.3,
+        "pause_at_waypoint_s": 3.0
+      }
+    },
+    {
+      "id": "anchor:talen_ress",
+      "match": { "pilot_id": "npc:core3_talen_ress" },
+      "building_id": "poi:lost_heaven_inn",
+      "role": "entertainer_trainer",
+      "poi_slot": "lobby",
+      "offset_m": { "x": 0.0, "z": 12.0 },
+      "apply_visual_override": true,
+      "idle_bob": { "amplitude_px": 2.2, "period_s": 2.2 },
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 3.5,
+        "speed_m_s": 0.45
+      }
+    },
+    {
+      "id": "anchor:guide_quartier",
+      "match": { "pilot_id": "npc:core3_guide_quartier" },
+      "building_id": "poi:lost_heaven_starport",
+      "role": "guide",
+      "poi_slot": "plaza",
+      "offset_m": { "x": -40.0, "z": 220.0 },
+      "apply_visual_override": false,
+      "notes": "Déjà proche spawn LH dans le feed ; override off pour respecter Core3.",
+      "patrol": {
+        "mode": "waypoints",
+        "speed_m_s": 0.6,
+        "pause_at_waypoint_s": 2.0,
+        "waypoints_relative": [
+          { "x": 0.0, "z": 0.0 },
+          { "x": 12.0, "z": -8.0 },
+          { "x": -10.0, "z": -5.0 }
+        ]
+      }
+    },
+    {
+      "id": "anchor:agent_circulation",
+      "match": { "pilot_id": "npc:core3_agent_circulation" },
+      "building_id": "poi:lost_heaven_starport",
+      "role": "traffic",
+      "poi_slot": "apron",
+      "offset_m": { "x": -30.0, "z": 230.0 },
+      "apply_visual_override": false,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 8.0,
+        "speed_m_s": 0.7,
+        "pause_at_waypoint_s": 0.8
+      }
+    },
+    {
+      "id": "anchor:pilot_imperial",
+      "match": { "pilot_id": "npc:core3_pilot_imperial_c" },
+      "building_id": "poi:lost_heaven_starport",
+      "role": "pilot",
+      "poi_slot": "pad",
+      "offset_m": { "x": 10.0, "z": -8.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 5.0,
+        "speed_m_s": 0.5
+      }
+    },
+    {
+      "id": "anchor:pilot_alliance",
+      "match": { "pilot_id": "npc:core3_pilot_alliance_c" },
+      "building_id": "poi:lost_heaven_starport",
+      "role": "pilot",
+      "poi_slot": "pad",
+      "offset_m": { "x": -8.0, "z": -12.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 5.0,
+        "speed_m_s": 0.5
+      }
+    },
+    {
+      "id": "anchor:pilot_freelance",
+      "match": { "pilot_id": "npc:core3_pilot_freelance_c" },
+      "building_id": "poi:lost_heaven_starport",
+      "role": "pilot",
+      "poi_slot": "pad",
+      "offset_m": { "x": 16.0, "z": 4.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 4.5,
+        "speed_m_s": 0.48
+      }
+    },
+    {
+      "id": "anchor:sergent_rue",
+      "match": { "pilot_id": "npc:core3_sergent_rue" },
+      "building_id": "poi:lost_heaven_gate",
+      "role": "sergeant",
+      "poi_slot": "gate",
+      "offset_m": { "x": -40.0, "z": 20.0 },
+      "apply_visual_override": false,
+      "notes": "Feed déjà près de la porte ; patrol ancrée sur position feed.",
+      "patrol": {
+        "mode": "waypoints",
+        "speed_m_s": 0.65,
+        "pause_at_waypoint_s": 2.2,
+        "waypoints_relative": [
+          { "x": 0.0, "z": 0.0 },
+          { "x": 18.0, "z": -6.0 },
+          { "x": -16.0, "z": -4.0 },
+          { "x": 8.0, "z": 10.0 }
+        ]
+      }
+    },
+    {
+      "id": "anchor:guard",
+      "match": { "pilot_id": "npc:core3_guard" },
+      "building_id": "poi:lost_heaven_gate",
+      "role": "guard",
+      "poi_slot": "gate",
+      "offset_m": { "x": 22.0, "z": 8.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 10.0,
+        "speed_m_s": 0.6,
+        "pause_at_waypoint_s": 1.5
+      }
+    },
+    {
+      "id": "anchor:rumeuriste",
+      "match": { "pilot_id": "npc:core3_rumeuriste" },
+      "building_id": "poi:lost_heaven_market",
+      "role": "rumormonger",
+      "poi_slot": "plaza",
+      "offset_m": { "x": -40.0, "z": 160.0 },
+      "apply_visual_override": false,
+      "notes": "Feed au centre hub ; patrol autour de la position feed (radius relatif).",
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 7.0,
+        "speed_m_s": 0.5,
+        "pause_at_waypoint_s": 2.0
+      }
+    },
+    {
+      "id": "anchor:daan_oth",
+      "match": { "pilot_id": "npc:core3_daan_oth" },
+      "building_id": "poi:lost_heaven_mission_post",
+      "role": "quest_giver",
+      "poi_slot": "desk",
+      "offset_m": { "x": 0.0, "z": 14.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 3.0,
+        "speed_m_s": 0.35,
+        "pause_at_waypoint_s": 2.5
+      }
+    },
+    {
+      "id": "anchor:scribe",
+      "match": { "pilot_id": "npc:core3_scribe" },
+      "building_id": "poi:lost_heaven_town_hall",
+      "role": "archivist",
+      "poi_slot": "lobby",
+      "offset_m": { "x": 8.0, "z": 10.0 },
+      "apply_visual_override": true,
+      "idle_bob": { "amplitude_px": 1.8, "period_s": 3.0 },
+      "patrol": { "enabled": false }
+    },
+    {
+      "id": "anchor:medic_trainer",
+      "match": { "pilot_id": "npc:core3_medic_trainer_c" },
+      "building_id": "poi:lost_heaven_clinic",
+      "role": "medic_trainer",
+      "poi_slot": "door",
+      "offset_m": { "x": 10.0, "z": 12.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 3.5,
+        "speed_m_s": 0.4
+      }
+    },
+    {
+      "id": "anchor:brawler_trainer",
+      "match": { "pilot_id": "npc:core3_brawler_trainer_c" },
+      "building_id": "poi:lost_heaven_training_hall",
+      "role": "combat_trainer",
+      "poi_slot": "yard",
+      "offset_m": { "x": -10.0, "z": 14.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "waypoints",
+        "speed_m_s": 0.55,
+        "pause_at_waypoint_s": 1.5,
+        "waypoints_relative": [
+          { "x": 0.0, "z": 0.0 },
+          { "x": 8.0, "z": 0.0 },
+          { "x": 8.0, "z": 8.0 },
+          { "x": 0.0, "z": 8.0 }
+        ]
+      }
+    },
+    {
+      "id": "anchor:marksman_trainer",
+      "match": { "pilot_id": "npc:core3_marksman_trainer_c" },
+      "building_id": "poi:lost_heaven_training_hall",
+      "role": "combat_trainer",
+      "poi_slot": "yard",
+      "offset_m": { "x": 12.0, "z": -6.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 4.0,
+        "speed_m_s": 0.45
+      }
+    },
+    {
+      "id": "anchor:scout_trainer",
+      "match": { "pilot_id": "npc:core3_scout_trainer_c" },
+      "building_id": "poi:lost_heaven_training_hall",
+      "role": "scout_trainer",
+      "poi_slot": "yard",
+      "offset_m": { "x": -14.0, "z": -8.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 5.0,
+        "speed_m_s": 0.55
+      }
+    },
+    {
+      "id": "anchor:artisan_trainer",
+      "match": { "pilot_id": "npc:core3_artisan_trainer_c" },
+      "building_id": "poi:lost_heaven_artisan_hall",
+      "role": "artisan_trainer",
+      "poi_slot": "door",
+      "offset_m": { "x": -12.0, "z": 8.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 3.0,
+        "speed_m_s": 0.35
+      }
+    },
+    {
+      "id": "anchor:politician_trainer",
+      "match": { "pilot_id": "npc:core3_politician_trainer_c" },
+      "building_id": "poi:lost_heaven_town_hall",
+      "role": "politician_trainer",
+      "poi_slot": "steps",
+      "offset_m": { "x": 0.0, "z": 18.0 },
+      "apply_visual_override": true,
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 3.0,
+        "speed_m_s": 0.3,
+        "pause_at_waypoint_s": 2.8
+      }
+    },
+    {
+      "id": "anchor:kisreudi",
+      "match": { "pilot_id": "npc:core3_kisreudi" },
+      "building_id": "poi:lost_heaven_housing_npc",
+      "role": "resident",
+      "poi_slot": "street",
+      "offset_m": { "x": 40.0, "z": -180.0 },
+      "apply_visual_override": false,
+      "notes": "Feed déjà SW hub ; micro-patrol locale.",
+      "patrol": {
+        "mode": "orbit",
+        "radius_m": 6.0,
+        "speed_m_s": 0.5
+      }
+    },
+    {
+      "id": "anchor:fallback_cantina_name",
+      "match": { "name_pattern": "(?i)(barman|cantina|videur|habitue|maitre de salle|artiste)" },
+      "building_id": "poi:lost_heaven_cantina",
+      "role": "cantina_fallback",
+      "poi_slot": "patio",
+      "offset_m": { "x": -10.0, "z": 16.0 },
+      "apply_visual_override": true,
+      "priority_boost": -10,
+      "notes": "Fallback si pilot_id inconnu ; ne gagne que si aucun match pilot_id."
+    },
+    {
+      "id": "anchor:fallback_guard_name",
+      "match": { "name_pattern": "(?i)(garde|sergent)" },
+      "building_id": "poi:lost_heaven_gate",
+      "role": "guard_fallback",
+      "poi_slot": "gate",
+      "offset_m": { "x": 0.0, "z": 12.0 },
+      "apply_visual_override": true,
+      "priority_boost": -10
+    }
+  ]
+}

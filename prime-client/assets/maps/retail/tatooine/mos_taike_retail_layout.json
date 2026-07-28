@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "zone": "tatooine",
+  "city": "mos_taike",
+  "source": "retail_world_snapshot",
+  "ws_file": "tatooine.ws",
+  "counts": {
+    "total": 11,
+    "buildings": 7,
+    "npcs": 0,
+    "statics": 4
+  },
+  "buildings": [
+    {
+      "id": 568322,
+      "parent_id": 0,
+      "tmpl": "object/building/tatooine/shared_filler_building_tatt_style01_01.iff",
+      "label": "filler building tatt style01 01",
+      "kind": "building",
+      "x": 3823.5,
+      "y": 16.1,
+      "z": 2327.23,
+      "size_m": 24.0,
+      "heading_deg": -90.1,
+      "city": "mos_taike"
+    },
+    {
+      "id": 574339,
+      "parent_id": 0,
+      "tmpl": "object/building/tatooine/shared_filler_building_tatt_style01_04.iff",
+      "label": "filler building tatt style01 04",
+      "kind": "building",
+      "x": 3844.37,
+      "y": 19.94,
+      "z": 2386.8,
+      "size_m": 24.0,
+      "heading_deg": 179.3,
+      "city": "mos_taike"
+    },
+    {
+      "id": 574343,
+      "parent_id": 0,
+      "tmpl": "object/building/tatooine/shared_filler_building_tatt_style01_06.iff",
+      "label": "filler building tatt style01 06",
+      "kind": "building",
+      "x": 3866.89,
+      "y": 27.5,
+      "z": 2319.72,
+      "size_m": 24.0,
+      "heading_deg": -53.9,
+      "city": "mos_taike"
+    },
+    {
+      "id": 1053331,
+      "parent_id": 0,
+      "tmpl": "object/building/tatooine/shared_parking_garage_tatooine_style_1.iff",
+      "label": "parking garage tatooine style 1",
+      "kind": "building",
+      "x": 3773.82,
+      "y": 8.39,
+      "z": 2326.82,
+      "size_m": 40.0,
+      "heading_deg": 179.5,
+      "city": "mos_taike"
+    },
+    {
+      "id": 1053360,
+      "parent_id": 0,
+      "tmpl": "object/building/tatooine/shared_filler_building_tatt_style01_06.iff",
+      "label": "filler building tatt style01 06",
+      "kind": "building",
+      "x": 3961.81,
+      "y": 53.5,
+      "z": 2271.88,
+      "size_m": 24.0,
+      "heading_deg": -114.0,
+      "city": "mos_taike"
+    },
+    {
+      "id": 1154120,
+      "parent_id": 0,
+      "tmpl": "object/building/tatooine/shared_housing_tatt_style01_med.iff",
+      "label": "housing tatt style01 med",
+      "kind": "building",
+      "x": 3780.99,
+      "y": 11.62,
+      "z": 2391.21,
+      "size_m": 32.0,
+      "heading_deg": 91.1,
+      "city": "mos_taike"
+    },
+    {
+      "id": 1400856,
+      "parent_id": 0,
+      "tmpl": "object/building/tatooine/shared_cloning_facility_tatooine_small.iff",
+      "label": "cloning facility tatooine small",
+      "kind": "building",
+      "x": 3897.22,
+      "y": 33.0,
+      "z": 2351.35,
+      "size_m": 28.0,
+      "heading_deg": -92.2,
+      "city": "mos_taike"
+    }
+  ],
+  "npcs": [],
+  "markers": [
+    {
+      "id": 1305336,
+      "parent_id": 0,
+      "tmpl": "object/tangible/terminal/shared_terminal_mission.iff",
+      "label": "terminal mission",
+      "kind": "terminal",
+      "x": 3783.55,
+      "y": 11.59,
+      "z": 2379.26,
+      "size_m": 10.0,
+      "heading_deg": -178.9,
+      "city": "mos_taike"
+    },
+    {
+      "id": 3945387,
+      "parent_id": 0,
+      "tmpl": "object/tangible/terminal/shared_terminal_bazaar.iff",
+      "label": "terminal bazaar",
+      "kind": "terminal",
+      "x": 3790.33,
+      "y": 8.39,
+      "z": 2337.46,
+      "size_m": 10.0,
+      "heading_deg": 90.0,
+      "city": "mos_taike"
+    },
+    {
+      "id": 3945388,
+      "parent_id": 0,
+      "tmpl": "object/tangible/terminal/shared_terminal_bazaar.iff",
+      "label": "terminal bazaar",
+      "kind": "terminal",
+      "x": 3790.36,
+      "y": 8.39,
+      "z": 2340.43,
+      "size_m": 10.0,
+      "heading_deg": 90.0,
+      "city": "mos_taike"
+    },
+    {
+      "id": 5285714,
+      "parent_id": 0,
+      "tmpl": "object/tangible/terminal/shared_terminal_bank.iff",
+      "label": "terminal bank",
+      "kind": "terminal",
+      "x": 3774.28,
+      "y": 8.31,
+      "z": 2343.47,
+      "size_m": 32.0,
+      "heading_deg": 0.0,
+      "city": "mos_taike"
+    }
+  ]
+}

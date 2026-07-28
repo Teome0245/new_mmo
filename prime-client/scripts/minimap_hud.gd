@@ -6,9 +6,9 @@ const CONFIG_PATH := "res://config/minimap_config.json"
 const POI_PATH := "res://assets/maps/tatooine_pois.json"
 const MAP_CONFIG_PATH := "res://assets/maps/tatooine_map_config.json"
 
-@export var camera_path: NodePath = NodePath("../../Camera2D")
-@export var entity_manager_path: NodePath = NodePath("../../EntityManager")
-@export var player_controller_path: NodePath = NodePath("../../PlayerController")
+@export var camera_path: NodePath = NodePath("../../../Camera2D")
+@export var entity_manager_path: NodePath = NodePath("../../../EntityManager")
+@export var player_controller_path: NodePath = NodePath("../../../PlayerController")
 
 var _size_px: float = 180.0
 var _view_radius_m: float = 420.0
@@ -78,7 +78,7 @@ func _load_pois() -> void:
 		_pois = arr if arr is Array else []
 
 func _load_planet_texture() -> void:
-	for path in ["res://assets/maps/tatooine.svg", "res://assets/maps/tatooine.png"]:
+	for path in ["res://assets/maps/tatooine.png", "res://assets/maps/tatooine.svg"]:
 		if ResourceLoader.exists(path):
 			_planet_texture = load(path) as Texture2D
 			if _planet_texture:

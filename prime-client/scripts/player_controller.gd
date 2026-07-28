@@ -1,20 +1,27 @@
-# player_controller.gd — ZQSD/Espace/Nage -> UDP:12346 -> prime_controller.py
+# player_controller.gd — ZQSD/Espace/Nage -> UDP:12346 et/ou LbgWsClient move
 extends Node
 class_name PlayerController
 
 const CMD_PORT:        int   = 12346
 const CAM_FOLLOW_SPEED: float = 5.0
 const PLAY_CFG:        String = "res://config/play_mode.json"
+const MOVE_SPEED:      float = 16.0
+const RUN_MULT:        float = 1.75
+const _LastPos = preload("res://scripts/last_position_store.gd")
 
 @export var enabled:       bool = false
 @export var follow_camera: bool = true
 @export var cmd_host:      String = "127.0.0.1"
 @export var cmd_port:      int   = CMD_PORT
+@export var prefer_ws_move: bool = true
 
 var _udp:       PacketPeerUDP = PacketPeerUDP.new()
 var _camera:    Camera2D      = null
 var _em:        EntityManager = null
 var _player_id: int           = 0
+var _ws:        Node          = null
+var _move_accum: float        = 0.0
+var _zones:     ZoneLayers    = null
 
 var _state: Dictionary = {
 	"fwd":   false,
@@ -36,6 +43,7 @@ func _ready() -> void:
 	_udp.set_dest_address(cmd_host, cmd_port)
 	_camera = get_node_or_null("../Camera2D")
 	_em     = get_node_or_null("../EntityManager")
+	_zones  = get_node_or_null("../WorldMap/ZoneLayers") as ZoneLayers
 	if enabled:
 		print("[PlayerCtrl] Actif — UDP -> %s:%d" % [cmd_host, cmd_port])
 
@@ -55,15 +63,22 @@ func _load_play_cfg() -> void:
 func set_player_id(obj_id: int) -> void:
 	_player_id = obj_id
 
+func set_ws_client(ws: Node) -> void:
+	_ws = ws
+
 func get_player_id() -> int:
 	return _player_id
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not enabled:
 		return
 	_handle_movement()
 	_handle_jump()
+	_apply_ws_locomotion(delta)
 	_follow_player()
+
+func _ws_open() -> bool:
+	return prefer_ws_move and _ws != null and _ws.has_method("is_open") and bool(_ws.is_open())
 
 func _handle_movement() -> void:
 	for action in _KEY_MAP:
@@ -73,13 +88,55 @@ func _handle_movement() -> void:
 				pressed = true
 		if pressed != _state[action]:
 			_state[action] = pressed
-			_send({"t": action, "active": pressed})
+			if not _ws_open():
+				_send({"t": action, "active": pressed})
 	var running: bool = Input.is_physical_key_pressed(KEY_SHIFT)
 	if running != _state["run"]:
 		_state["run"] = running
-		_send({"t": "run", "active": running})
+		if not _ws_open():
+			_send({"t": "run", "active": running})
+
+func _apply_ws_locomotion(delta: float) -> void:
+	if not _ws_open() or _player_id == 0 or _em == null:
+		return
+	var dir := Vector3.ZERO
+	# Écran : Z=haut, S=bas, Q=gauche, D=droite → Core3 X est / Z nord
+	if _state["fwd"]:
+		dir.z += 1.0
+	if _state["back"]:
+		dir.z -= 1.0
+	if _state["left"]:
+		dir.x -= 1.0
+	if _state["right"]:
+		dir.x += 1.0
+	if dir == Vector3.ZERO:
+		return
+	dir = dir.normalized()
+	var speed := MOVE_SPEED * (RUN_MULT if _state["run"] else 1.0)
+	var e: Entity = _em.get_entity(_player_id)
+	if e == null:
+		return
+	# Toujours core3_pos (pas from_screen) : position écran inclut jitter/bob → dérive diagonale.
+	var core3: Vector3 = e.core3_pos
+	core3.x += dir.x * speed * delta
+	core3.z += dir.z * speed * delta
+	if _zones:
+		core3 = _zones.clamp_move(e.core3_pos, core3)
+	_em.move(_player_id, core3)
+	_move_accum += delta
+	if _move_accum >= 0.05:
+		_move_accum = 0.0
+		if _ws.has_method("send_move"):
+			_ws.send_move(core3)
+		_LastPos.save(_player_id, core3)
+
+
+func is_moving() -> bool:
+	return bool(_state["fwd"] or _state["back"] or _state["left"] or _state["right"])
 
 func _handle_jump() -> void:
+	if _ws_open():
+		return
 	if Input.is_physical_key_pressed(KEY_SPACE):
 		if Input.is_physical_key_pressed(KEY_SHIFT):
 			_send({"t": "swim_up", "active": true})
@@ -104,10 +161,17 @@ func _send(obj: Dictionary) -> void:
 	_udp.put_packet(JSON.stringify(obj).to_utf8_buffer())
 
 func send_initial_position(x: float, y: float, z: float) -> void:
+	if _ws_open() and _ws.has_method("send_move"):
+		_ws.send_move(Vector3(x, y, z))
+		return
 	_send({"t": "pos", "x": x, "y": y, "z": z})
 
 func request_move_to(x: float, z: float) -> void:
+	if _ws_open() and _ws.has_method("send_move"):
+		_ws.send_move(Vector3(x, 0.0, z))
+		return
 	_send({"t": "goto", "x": x, "z": z, "y": 0.0})
 
 func _exit_tree() -> void:
-	_send({"t": "stop"})
+	if not _ws_open():
+		_send({"t": "stop"})

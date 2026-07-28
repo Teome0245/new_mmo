@@ -1,18 +1,49 @@
 {
-  "schema_version": 1,
+  "schema_version": 3,
   "planet": "tatooine",
   "display_name": "Scrapaltai",
   "hub_city": "Lost Heaven",
   "half_size": 6500.0,
   "bounds": {
-    "minX": -6500,
-    "maxX": 6500,
-    "minY": -6500,
-    "maxY": 6500
+    "minX": -6500.0,
+    "maxX": 6500.0,
+    "minY": -6500.0,
+    "maxY": 6500.0
   },
   "north_up": true,
-  "texture": "res://assets/maps/tatooine.svg",
+  "world_texture": "res://assets/maps/tatooine.svg",
+  "planet_map_texture": "res://assets/maps/tatooine.png",
+  "texture_core3_bounds": {
+    "min_x": -6500.0,
+    "max_x": 6500.0,
+    "min_z": -6500.0,
+    "max_z": 6500.0
+  },
+  "world_texture_source": "precu_world_editor",
+  "texture_sources": {
+    "tatooine.svg": "Planète entière ±6500 Core3 (World Editor / PreCU 245) — fond jeu",
+    "tatooine_planet_precu.svg": "Copie référence import 245",
+    "tatooine_satellite.webp": "Placeholder 640² — ne plus utiliser en world_texture",
+    "tatooine.png": "Carte Ctrl+M (POI / routes)"
+  },
   "projection_scale": 0.5,
   "flip_texture_y": false,
-  "notes": "M8 — planète entière jouable ; contenu actif = Lost Heaven"
+  "world_render": {
+    "backdrop": "procedural_canyon",
+    "show_planet_texture": false,
+    "position_map_city": "lost_heaven",
+    "position_map_json": "res://assets/maps/retail/tatooine/lost_heaven_retail_layout.json",
+    "position_map_source": "retail_gabarit_mos_eisley_shifted",
+    "entity_markers": "triangle",
+    "server_npcs": {
+      "enabled": true,
+      "anchor_x": 4749.0,
+      "anchor_z": -737.0,
+      "radius_m": 800.0,
+      "merge_ws_zone_state": true,
+      "http_export_path": "/v1/world/npcs_near"
+    }
+  },
+  "notes": "Carte positionnement = lost_heaven_retail_layout (Ctrl+Shift+R toggle). Fond = planet_backdrop.gd.",
+  "imported_at": "2026-07-27T13:27:16.236287+00:00"
 }

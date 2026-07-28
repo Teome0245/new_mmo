@@ -16,23 +16,29 @@ func _ready() -> void:
 func spawn(object_id: int, core3_pos: Vector3,
 		color: Color = Entity.COLOR_NPC,
 		label: String = "",
-		kind: String = "object") -> Entity:
+		kind: String = "object",
+		entity_key: String = "") -> Entity:
 	if _entities.has(object_id):
 		return _entities[object_id]
 	if _entity_packed == null:
 		return null
 	var entity: Entity = _entity_packed.instantiate()
 	entity.object_id = object_id
+	entity.set_kind(kind)
+	if entity_key != "":
+		entity.set_entity_key(entity_key)
 	add_child(entity)
-	entity.set_display_jitter(_jitter_for_oid(object_id))
+	# Jitter uniquement objets anonymes — jamais joueurs (casse la locomotion via from_screen).
+	if kind != "npc" and kind != "player":
+		entity.set_display_jitter(_jitter_for_oid(object_id))
 	entity.set_core3_position(core3_pos)
 	entity.set_color(color)
-	var tex := SpriteRegistry.resolve_texture(kind, label)
+	if label != "":
+		entity.set_label(label)
+	var tex := SpriteRegistry.resolve_texture(kind, label, entity_key)
 	var tint := SpriteRegistry.resolve_tint(kind, label)
 	if tex:
 		entity.set_sprite_texture(tex, tint)
-	if label != "":
-		entity.set_label(label)
 	_entities[object_id] = entity
 	return entity
 
@@ -67,3 +73,18 @@ func count() -> int:
 
 func get_all_entities() -> Array:
 	return _entities.values()
+
+func pick_interactable_at_screen(mouse_pos: Vector2) -> Entity:
+	var best: Entity = null
+	var best_dist := 1.0e12
+	for entity_v in _entities.values():
+		var entity := entity_v as Entity
+		if entity == null or not entity.is_interactable():
+			continue
+		if not entity.hit_test_screen(mouse_pos):
+			continue
+		var d := entity.screen_anchor().distance_squared_to(mouse_pos)
+		if d < best_dist:
+			best_dist = d
+			best = entity
+	return best

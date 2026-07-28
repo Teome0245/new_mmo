@@ -5,13 +5,14 @@ class_name PlanetMapPanel
 const POI_PATH := "res://assets/maps/tatooine_pois.json"
 const LOC_PATH := "res://assets/maps/locations_tree.json"
 const MAP_CONFIG := "res://assets/maps/tatooine_map_config.json"
+const HUB := Vector3(4749.0, 0.0, -737.0)
 
-@export var camera_path: NodePath = NodePath("../../Camera2D")
-@export var player_controller_path: NodePath = NodePath("../../PlayerController")
+@export var camera_path: NodePath = NodePath("../../../Camera2D")
+@export var player_controller_path: NodePath = NodePath("../../../PlayerController")
 
 var _open: bool = false
 var _pan: Vector2 = Vector2.ZERO
-var _zoom: float = 0.35
+var _zoom: float = 1.0
 var _half_size: float = 6500.0
 var _dragging: bool = false
 var _drag_start: Vector2 = Vector2.ZERO
@@ -26,15 +27,21 @@ var _hover_label: String = ""
 
 @onready var _title: Label = $Panel/VBox/TitleLabel
 @onready var _hint: Label = $Panel/VBox/HintLabel
+@onready var _chrome: Control = $Panel
 
 func _ready() -> void:
+	_open = false
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sync_chrome()
 	_load_config()
 	_load_texture()
 	_load_data()
+	if _title:
+		_title.add_theme_color_override("font_color", Color(0.95, 0.88, 0.72, 1))
 	if _hint:
-		_hint.text = "Ctrl+M fermer · molette zoom · double-clic aller · Shift+clic waypoint · clic-droit suppr."
+		_hint.text = "Ctrl+M fermer · molette zoom · double-clic aller · Shift+clic waypoint · clic-droit suppr. · F centrer hub"
+		_hint.add_theme_color_override("font_color", Color(0.72, 0.62, 0.48, 1))
 
 func reload_data() -> void:
 	_load_data()
@@ -47,13 +54,21 @@ func open_map() -> void:
 	_open = true
 	visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	_sync_chrome()
 	_waypoints = WaypointStore.load_all()
+	_zoom = 1.0
+	_pan = Vector2.ZERO
 	queue_redraw()
 
 func close_map() -> void:
 	_open = false
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sync_chrome()
+
+func _sync_chrome() -> void:
+	if _chrome:
+		_chrome.visible = _open
 
 func toggle_map() -> void:
 	if _open:
@@ -61,10 +76,23 @@ func toggle_map() -> void:
 	else:
 		open_map()
 
+func _focus_core3(core3: Vector3) -> void:
+	var rect := _map_rect()
+	var local := _core3_to_local(core3, rect)
+	_pan = rect.size * 0.5 - local * _zoom
+	queue_redraw()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_M and event.ctrl_pressed:
 			toggle_map()
+			get_viewport().set_input_as_handled()
+			return
+	if not _open:
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_F:
+			_focus_core3(HUB)
 			get_viewport().set_input_as_handled()
 
 func _gui_input(event: InputEvent) -> void:
@@ -73,12 +101,10 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
-			_zoom = clampf(_zoom * 1.12, 0.08, 2.5)
-			queue_redraw()
+			_zoom_at(mb.position, 1.12)
 			accept_event()
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
-			_zoom = clampf(_zoom / 1.12, 0.08, 2.5)
-			queue_redraw()
+			_zoom_at(mb.position, 1.0 / 1.12)
 			accept_event()
 		elif mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
@@ -109,12 +135,18 @@ func _gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion:
 		var mm := event as InputEventMouseMotion
 		if _dragging:
-			_pan += (mm.position - _drag_start) / _zoom
-			_drag_start = mm.position
+			_pan = _pan_start + (mm.position - _drag_start)
 			queue_redraw()
 		else:
 			_hover_label = _pick_poi_label(mm.position)
 			queue_redraw()
+
+func _zoom_at(screen_pos: Vector2, factor: float) -> void:
+	var rect := _map_rect()
+	var before := (screen_pos - rect.position - _pan) / _zoom
+	_zoom = clampf(_zoom * factor, 0.35, 4.0)
+	_pan = screen_pos - rect.position - before * _zoom
+	queue_redraw()
 
 func _load_config() -> void:
 	if not FileAccess.file_exists(MAP_CONFIG):
@@ -126,7 +158,14 @@ func _load_config() -> void:
 		_half_size = float((raw as Dictionary).get("half_size", _half_size))
 
 func _load_texture() -> void:
-	for path in ["res://assets/maps/tatooine.svg", "res://assets/maps/tatooine.png"]:
+	_texture = MapTextureLoader.load_texture("planet_map")
+	if _texture:
+		return
+	for path in [
+		"res://assets/maps/tatooine.png",
+		"res://assets/maps/tatooine_satellite.webp",
+		"res://assets/maps/tatooine.svg",
+	]:
 		if ResourceLoader.exists(path):
 			_texture = load(path) as Texture2D
 			if _texture:
@@ -150,23 +189,25 @@ func _read_array(path: String, key: String) -> Array:
 
 func _map_rect() -> Rect2:
 	var vp := get_viewport_rect().size
-	var margin := 48.0
-	var top := 72.0
-	return Rect2(margin, top, vp.x - margin * 2.0, vp.y - top - margin)
+	var margin := 40.0
+	var top := 68.0
+	return Rect2(margin, top, vp.x - margin * 2.0, vp.y - top - margin - 28.0)
+
+func _core3_to_local(core3: Vector3, rect: Rect2) -> Vector2:
+	var nx := core3.x / _half_size
+	var nz := -core3.z / _half_size
+	return Vector2((nx + 1.0) * 0.5 * rect.size.x, (nz + 1.0) * 0.5 * rect.size.y)
 
 func _screen_to_core3(screen_pos: Vector2) -> Vector3:
 	var rect := _map_rect()
 	var local := (screen_pos - rect.position - _pan) / _zoom
-	var world_px := _half_size * Projection3D2D.SCALE
 	var nx := (local.x / rect.size.x) * 2.0 - 1.0
 	var ny := (local.y / rect.size.y) * 2.0 - 1.0
 	return Vector3(nx * _half_size, 0.0, -ny * _half_size)
 
 func _core3_to_screen(core3: Vector3) -> Vector2:
 	var rect := _map_rect()
-	var nx := core3.x / _half_size
-	var nz := -core3.z / _half_size
-	var local := Vector2((nx + 1.0) * 0.5 * rect.size.x, (nz + 1.0) * 0.5 * rect.size.y)
+	var local := _core3_to_local(core3, rect)
 	return rect.position + _pan + local * _zoom
 
 func _pick_waypoint(screen_pos: Vector2) -> String:
@@ -187,7 +228,7 @@ func _pick_poi_label(screen_pos: Vector2) -> String:
 		if bool(p.get("deprecated", false)):
 			continue
 		var pos := _core3_to_screen(Vector3(float(p.get("x", 0)), 0, float(p.get("z", 0))))
-		if pos.distance_to(screen_pos) <= 12.0:
+		if pos.distance_to(screen_pos) <= 14.0:
 			return str(p.get("label", p.get("id", "")))
 	return ""
 
@@ -200,19 +241,33 @@ func _go_to(core3: Vector3) -> void:
 		if cam:
 			cam.position = Projection3D2D.to_screen(core3)
 
+func _poi_color(kind: String) -> Color:
+	match kind:
+		"hub":
+			return Color(0.95, 0.72, 0.22, 1.0)
+		"spawn", "starport_shuttle":
+			return Color(0.45, 0.85, 1.0, 1.0)
+		"city":
+			return Color(0.92, 0.82, 0.55, 1.0)
+		_:
+			return Color(0.85, 0.65, 0.35, 0.95)
+
 func _draw() -> void:
 	if not _open:
 		return
-	draw_rect(get_viewport_rect(), Color(0.02, 0.03, 0.06, 0.92))
+	# Fond space-western
+	draw_rect(get_viewport_rect(), Color(0.05, 0.04, 0.03, 0.94))
 	var rect := _map_rect()
-	draw_rect(rect, Color(0.08, 0.1, 0.14, 0.95))
-	draw_rect(rect, Color(0.35, 0.55, 0.85, 0.65), false, 2.0)
-	if _texture:
-		var tex_size := _texture.get_size()
-		if tex_size.x > 0:
-			draw_set_transform(rect.position + _pan, 0.0, Vector2(_zoom, _zoom))
-			draw_texture_rect(_texture, Rect2(Vector2.ZERO, rect.size), false, Color(1, 1, 1, 0.92))
-			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	draw_rect(rect, Color(0.10, 0.08, 0.06, 0.98))
+	draw_rect(rect, Color(0.72, 0.52, 0.28, 0.75), false, 2.0)
+
+	# Texture planète : remplit le cadre, puis zoom/pan
+	if _texture and _texture.get_size().x > 0.0:
+		draw_set_transform(rect.position + _pan, 0.0, Vector2(_zoom, _zoom))
+		draw_texture_rect(_texture, Rect2(Vector2.ZERO, rect.size), false, Color(1, 1, 1, 0.96))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+	# Lieux (villes / hub)
 	for item: Variant in _locations:
 		if not item is Dictionary:
 			continue
@@ -220,23 +275,74 @@ func _draw() -> void:
 		if bool(loc.get("deprecated", false)):
 			continue
 		var pos := _core3_to_screen(Vector3(float(loc.get("x", 0)), 0, float(loc.get("z", 0))))
-		draw_circle(pos, 5.0, Color(0.5, 0.85, 1.0, 0.9))
+		if not rect.has_point(pos):
+			continue
+		var kind := str(loc.get("kind", ""))
+		if kind == "hub":
+			continue
+		var col := _poi_color(kind if kind != "" else "city")
+		draw_circle(pos, 6.0, col)
+		draw_arc(pos, 9.0, 0.0, TAU, 20, col.lightened(0.2), 1.5)
+		var lbl := str(loc.get("label", ""))
+		if lbl != "":
+			draw_string(
+				ThemeDB.fallback_font,
+				pos + Vector2(12, 4),
+				lbl,
+				HORIZONTAL_ALIGNMENT_LEFT,
+				-1,
+				13,
+				Color(0.96, 0.90, 0.78, 0.95)
+			)
+
+	# POI essentiels
 	for item: Variant in _pois:
 		if not item is Dictionary:
 			continue
 		var p: Dictionary = item
 		if bool(p.get("deprecated", false)):
 			continue
+		if not bool(p.get("essential", false)) and not bool(p.get("active", true)):
+			continue
 		var pos := _core3_to_screen(Vector3(float(p.get("x", 0)), 0, float(p.get("z", 0))))
-		draw_circle(pos, 4.0, Color(0.95, 0.75, 0.25, 0.95))
+		if not rect.has_point(pos):
+			continue
+		var kind := str(p.get("kind", ""))
+		var col := _poi_color(kind)
+		var r := 5.5 if kind == "hub" else 3.5
+		draw_circle(pos, r, col)
+		# Labels hub / villes seulement (évite le clutter)
+		if kind == "hub" or kind == "city":
+			var lbl := str(p.get("label", ""))
+			if lbl != "":
+				draw_string(
+					ThemeDB.fallback_font,
+					pos + Vector2(10, -6),
+					lbl,
+					HORIZONTAL_ALIGNMENT_LEFT,
+					-1,
+					12,
+					Color(1.0, 0.92, 0.7, 0.95)
+				)
+
 	for item: Variant in _waypoints:
 		if not item is Dictionary:
 			continue
 		var wp: Dictionary = item
 		var pos := _core3_to_screen(Vector3(float(wp.get("x", 0)), 0, float(wp.get("z", 0))))
-		draw_circle(pos, 6.0, Color(1.0, 0.35, 0.95, 1.0))
+		draw_circle(pos, 6.0, Color(1.0, 0.45, 0.85, 1.0))
 		var lbl := str(wp.get("label", ""))
 		if lbl != "":
 			draw_string(ThemeDB.fallback_font, pos + Vector2(8, -8), lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 1, 1, 0.95))
-	if _hover_label != "":
-		draw_string(ThemeDB.fallback_font, Vector2(56, get_viewport_rect().size.y - 24), _hover_label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.9, 0.95, 1, 1))
+
+	# Pied de carte
+	var footer := _hover_label if _hover_label != "" else "Lost Heaven · Scrapaltai"
+	draw_string(
+		ThemeDB.fallback_font,
+		Vector2(rect.position.x + 8.0, get_viewport_rect().size.y - 18.0),
+		footer,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		14,
+		Color(0.92, 0.82, 0.62, 1)
+	)

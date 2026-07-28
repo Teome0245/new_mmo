@@ -11,22 +11,18 @@
 [ext_resource type="Script" path="res://scripts/zone_layers.gd" id="8_zones"]
 [ext_resource type="Script" path="res://scripts/ws_objects_layer.gd" id="9_ws"]
 [ext_resource type="Script" path="res://scripts/hub_buildings_layer.gd" id="10_hub"]
+[ext_resource type="Script" path="res://scripts/hub_ground_layer.gd" id="10_ground"]
+[ext_resource type="Script" path="res://scripts/hub_props_layer.gd" id="10_props"]
+[ext_resource type="Script" path="res://scripts/retail_layout_layer.gd" id="10_retail"]
 [ext_resource type="PackedScene" path="res://scenes/ui/minimap_hud.tscn" id="11_mm"]
 [ext_resource type="PackedScene" path="res://scenes/ui/planet_map_panel.tscn" id="12_pmap"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.05, 0.05, 0.1, 0.78)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hint"]
-bg_color = Color(0.08, 0.12, 0.08, 0.72)
-corner_radius_top_left = 4
-corner_radius_top_right = 4
-corner_radius_bottom_right = 4
-corner_radius_bottom_left = 4
+[ext_resource type="PackedScene" path="res://scenes/ui/hotbar.tscn" id="13_hotbar"]
+[ext_resource type="PackedScene" path="res://scenes/ui/inventory_panel.tscn" id="14_inv"]
+[ext_resource type="PackedScene" path="res://scenes/ui/talents_craft_panel.tscn" id="15_tal"]
+[ext_resource type="Theme" path="res://themes/prime_ui.tres" id="16_theme"]
+[ext_resource type="PackedScene" path="res://scenes/ui/login_panel.tscn" id="17_login"]
+[ext_resource type="Script" path="res://scripts/LbgWsClient.gd" id="18_ws"]
+[ext_resource type="PackedScene" path="res://scenes/ui/dialogue_portrait_panel.tscn" id="19_dialog"]
 
 [node name="Main" type="Node2D" unique_id=1985474402]
 script = ExtResource("1_main")
@@ -50,9 +46,23 @@ script = ExtResource("8_zones")
 z_index = -7
 script = ExtResource("9_ws")
 
+[node name="HubGroundLayer" type="Node2D" parent="WorldMap"]
+z_index = -7
+script = ExtResource("10_ground")
+
 [node name="HubBuildingsLayer" type="Node2D" parent="WorldMap"]
 z_index = -6
 script = ExtResource("10_hub")
+
+[node name="HubPropsLayer" type="Node2D" parent="WorldMap"]
+z_index = -5
+script = ExtResource("10_props")
+
+[node name="RetailLayoutLayer" type="Node2D" parent="WorldMap"]
+z_index = -4
+script = ExtResource("10_retail")
+visible_layout = true
+city_id = "lost_heaven"
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=213625031]
 
@@ -74,46 +84,83 @@ script = ExtResource("5_pctrl")
 enabled = false
 follow_camera = true
 
+[node name="LbgWsClient" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("18_ws")
+
 [node name="UI" type="CanvasLayer" parent="." unique_id=319586651]
 
-[node name="InfoPanel" type="PanelContainer" parent="UI" unique_id=769391809]
+[node name="HudLayer" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("16_theme")
+
+[node name="InfoPanel" type="PanelContainer" parent="UI/HudLayer" unique_id=769391809]
+visible = false
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_top = -76.0
-offset_right = 800.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+offset_left = 8.0
+offset_top = -118.0
+offset_right = 380.0
+offset_bottom = -86.0
 
-[node name="VBox" type="VBoxContainer" parent="UI/InfoPanel" unique_id=994384847]
+[node name="VBox" type="VBoxContainer" parent="UI/HudLayer/InfoPanel" unique_id=994384847]
 layout_mode = 2
 
-[node name="InfoLabel" type="Label" parent="UI/InfoPanel/VBox" unique_id=1705965394]
+[node name="InfoLabel" type="Label" parent="UI/HudLayer/InfoPanel/VBox" unique_id=1705965394]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
 theme_override_font_sizes/font_size = 13
-text = "Prime Client v0.1  |  M4 Controls"
+text = "Prime Client v0.2  |  HUD"
 
-[node name="StatsLabel" type="Label" parent="UI/InfoPanel/VBox" unique_id=2054250193]
+[node name="StatsLabel" type="Label" parent="UI/HudLayer/InfoPanel/VBox" unique_id=2054250193]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.7, 0.85, 0.9)
 theme_override_font_sizes/font_size = 11
-text = "[ZQSD/WASD] marcher  [Shift] courir  [Espace] sauter  [Shift+Espace] nager haut  [Ctrl+M] carte  [R] reset cam"
+text = "[H] hub  [T] talents  [I] inventaire  [1-0] hotbar  [Esc] quit"
 
-[node name="StatePanel" type="PanelContainer" parent="UI" unique_id=2095658107]
+[node name="StatePanel" type="PanelContainer" parent="UI/HudLayer" unique_id=2095658107]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -200.0
-offset_bottom = 80.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_hint")
+offset_left = -120.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = 40.0
 
-[node name="StateLabel" type="Label" parent="UI/StatePanel" unique_id=401423268]
+[node name="StateLabel" type="Label" parent="UI/HudLayer/StatePanel" unique_id=401423268]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 1, 0.5, 1)
 theme_override_font_sizes/font_size = 14
 text = "STANDING"
 horizontal_alignment = 1
 
-[node name="MinimapHud" parent="UI" instance=ExtResource("11_mm")]
+[node name="Hotbar" parent="UI/HudLayer" instance=ExtResource("13_hotbar")]
 
-[node name="PlanetMapPanel" parent="UI" instance=ExtResource("12_pmap")]
+[node name="MinimapHud" parent="UI/HudLayer" instance=ExtResource("11_mm")]
+
+[node name="ModalLayer" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+theme = ExtResource("16_theme")
+
+[node name="TalentsCraftPanel" parent="UI/ModalLayer" instance=ExtResource("15_tal")]
+
+[node name="InventoryPanel" parent="UI/ModalLayer" instance=ExtResource("14_inv")]
+
+[node name="PlanetMapPanel" parent="UI/ModalLayer" instance=ExtResource("12_pmap")]
+visible = false
+
+[node name="DialoguePortraitPanel" parent="UI/ModalLayer" instance=ExtResource("19_dialog")]
+
+[node name="LoginPanel" parent="UI" instance=ExtResource("17_login")]
+z_index = 200

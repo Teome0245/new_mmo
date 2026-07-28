@@ -1,0 +1,299 @@
+{
+  "schema_version": 1,
+  "hub": "lost_heaven",
+  "anchor": {
+    "x": 4749.0,
+    "z": -737.0
+  },
+  "notes": "Footprints 2D légers (pas full art). Coords Core3 X/Z monde. Rendu via HubPropsLayer (_draw), même projection que HubBuildingsLayer.",
+  "defaults": {
+    "path_width_m": 6.0,
+    "path_color": "#8C6B47",
+    "path_alpha": 0.35,
+    "prop_fill_alpha": 0.28,
+    "prop_stroke_alpha": 0.9
+  },
+  "gate_exits": [
+    {
+      "id": "gate:south_main",
+      "label": "Porte sud — sortie vers le désert",
+      "building_id": "poi:lost_heaven_gate",
+      "center": { "x": 4809.0, "z": -1150.0 },
+      "width_m": 36.0,
+      "depth_north_m": 120.0,
+      "depth_south_m": 80.0,
+      "fence_open_segment_indices": [5]
+    }
+  ],
+  "paths": [
+    {
+      "id": "path:lh_plaza_ring",
+      "kind": "plaza",
+      "label": "Anneau plaza",
+      "width_m": 8.0,
+      "closed": true,
+      "points": [
+        { "x": 4749.0, "z": -700.0 },
+        { "x": 4820.0, "z": -737.0 },
+        { "x": 4749.0, "z": -780.0 },
+        { "x": 4678.0, "z": -737.0 }
+      ]
+    },
+    {
+      "id": "path:lh_starport_to_plaza",
+      "kind": "road",
+      "label": "Allée port → plaza",
+      "width_m": 7.0,
+      "closed": false,
+      "points": [
+        { "x": 4809.0, "z": -780.0 },
+        { "x": 4780.0, "z": -760.0 },
+        { "x": 4749.0, "z": -737.0 }
+      ]
+    },
+    {
+      "id": "path:lh_plaza_to_market",
+      "kind": "road",
+      "label": "Allée plaza → marché",
+      "width_m": 6.0,
+      "closed": false,
+      "points": [
+        { "x": 4749.0, "z": -780.0 },
+        { "x": 4770.0, "z": -850.0 },
+        { "x": 4809.0, "z": -900.0 }
+      ]
+    },
+    {
+      "id": "path:lh_market_to_gate",
+      "kind": "road",
+      "label": "Allée marché → porte",
+      "width_m": 8.0,
+      "closed": false,
+      "points": [
+        { "x": 4809.0, "z": -960.0 },
+        { "x": 4809.0, "z": -1010.0 },
+        { "x": 4809.0, "z": -1040.0 }
+      ]
+    },
+    {
+      "id": "path:lh_gate_to_wilds",
+      "kind": "road",
+      "label": "Route porte → extérieur",
+      "width_m": 9.0,
+      "closed": false,
+      "points": [
+        { "x": 4809.0, "z": -1040.0 },
+        { "x": 4809.0, "z": -1150.0 },
+        { "x": 4815.0, "z": -1280.0 },
+        { "x": 4830.0, "z": -1450.0 }
+      ]
+    },
+    {
+      "id": "path:lh_perimeter_fence",
+      "kind": "fence",
+      "label": "Palissade hub",
+      "width_m": 2.0,
+      "closed": true,
+      "points": [
+        { "x": 4520.0, "z": -640.0 },
+        { "x": 5090.0, "z": -640.0 },
+        { "x": 5090.0, "z": -1080.0 },
+        { "x": 4860.0, "z": -1080.0 },
+        { "x": 4838.0, "z": -1080.0 },
+        { "x": 4838.0, "z": -1220.0 },
+        { "x": 4780.0, "z": -1220.0 },
+        { "x": 4780.0, "z": -1080.0 },
+        { "x": 4749.0, "z": -1020.0 },
+        { "x": 4638.0, "z": -1080.0 },
+        { "x": 4520.0, "z": -1080.0 }
+      ]
+    },
+    {
+      "id": "path:lh_cantina_spur",
+      "kind": "alley",
+      "label": "Venelle cantina",
+      "width_m": 5.0,
+      "closed": false,
+      "points": [
+        { "x": 4820.0, "z": -737.0 },
+        { "x": 4880.0, "z": -770.0 },
+        { "x": 4910.0, "z": -802.0 }
+      ]
+    }
+  ],
+  "props": [
+    {
+      "id": "prop:lh_plaza_marker",
+      "kind": "monument",
+      "label": "Borne plaza",
+      "x": 4749.0,
+      "z": -737.0,
+      "footprint": { "shape": "circle", "radius_m": 3.5 },
+      "color": "#B37A47",
+      "z_draw": 10
+    },
+    {
+      "id": "prop:lh_starport_crates",
+      "kind": "crate_stack",
+      "label": "Caisses port",
+      "x": 4835.0,
+      "z": -785.0,
+      "footprint": { "shape": "rect", "w_m": 8.0, "h_m": 5.0, "yaw_deg": 15.0 },
+      "color": "#6B5A45",
+      "near_building": "poi:lost_heaven_starport",
+      "z_draw": 5
+    },
+    {
+      "id": "prop:lh_cantina_bench",
+      "kind": "bench",
+      "label": "Banc cantina",
+      "x": 4910.0,
+      "z": -785.0,
+      "footprint": { "shape": "rect", "w_m": 4.0, "h_m": 1.2, "yaw_deg": 0.0 },
+      "color": "#8C6B47",
+      "near_building": "poi:lost_heaven_cantina",
+      "z_draw": 5
+    },
+    {
+      "id": "prop:lh_market_stall_a",
+      "kind": "stall",
+      "label": "Étal marché A",
+      "x": 4785.0,
+      "z": -915.0,
+      "footprint": { "shape": "rect", "w_m": 6.0, "h_m": 4.0, "yaw_deg": -20.0 },
+      "color": "#C4843A",
+      "near_building": "poi:lost_heaven_market",
+      "z_draw": 5
+    },
+    {
+      "id": "prop:lh_market_stall_b",
+      "kind": "stall",
+      "label": "Étal marché B",
+      "x": 4835.0,
+      "z": -945.0,
+      "footprint": { "shape": "rect", "w_m": 5.5, "h_m": 3.5, "yaw_deg": 25.0 },
+      "color": "#A86B35",
+      "near_building": "poi:lost_heaven_market",
+      "z_draw": 5
+    },
+    {
+      "id": "prop:lh_gate_lamp",
+      "kind": "lamp",
+      "label": "Lampe porte",
+      "x": 4785.0,
+      "z": -1045.0,
+      "footprint": { "shape": "circle", "radius_m": 1.2 },
+      "color": "#59BFD9",
+      "near_building": "poi:lost_heaven_gate",
+      "z_draw": 8
+    },
+    {
+      "id": "prop:lh_gate_barrier",
+      "kind": "barrier",
+      "label": "Barrière porte",
+      "x": 4809.0,
+      "z": -1035.0,
+      "footprint": { "shape": "rect", "w_m": 18.0, "h_m": 2.0, "yaw_deg": 0.0 },
+      "color": "#5A5048",
+      "near_building": "poi:lost_heaven_gate",
+      "z_draw": 4
+    },
+    {
+      "id": "prop:lh_clinic_tank",
+      "kind": "tank",
+      "label": "Cuve clinique",
+      "x": 4660.0,
+      "z": -655.0,
+      "footprint": { "shape": "circle", "radius_m": 2.5 },
+      "color": "#66A0A8",
+      "near_building": "poi:lost_heaven_clinic",
+      "z_draw": 5
+    },
+    {
+      "id": "prop:lh_plaza_lamp_n",
+      "kind": "lamp",
+      "x": 4749.0,
+      "z": -705.0,
+      "footprint": { "shape": "circle", "radius_m": 1.0 },
+      "color": "#E8C85A",
+      "z_draw": 8
+    },
+    {
+      "id": "prop:lh_plaza_lamp_e",
+      "kind": "lamp",
+      "x": 4810.0,
+      "z": -737.0,
+      "footprint": { "shape": "circle", "radius_m": 1.0 },
+      "color": "#E8C85A",
+      "z_draw": 8
+    },
+    {
+      "id": "prop:lh_plaza_lamp_s",
+      "kind": "lamp",
+      "x": 4749.0,
+      "z": -770.0,
+      "footprint": { "shape": "circle", "radius_m": 1.0 },
+      "color": "#E8C85A",
+      "z_draw": 8
+    },
+    {
+      "id": "prop:lh_plaza_lamp_w",
+      "kind": "lamp",
+      "x": 4688.0,
+      "z": -737.0,
+      "footprint": { "shape": "circle", "radius_m": 1.0 },
+      "color": "#E8C85A",
+      "z_draw": 8
+    },
+    {
+      "id": "prop:lh_cantina_table_a",
+      "kind": "table",
+      "x": 4920.0,
+      "z": -790.0,
+      "footprint": { "shape": "circle", "radius_m": 1.4 },
+      "color": "#7A5230",
+      "near_building": "poi:lost_heaven_cantina",
+      "z_draw": 6
+    },
+    {
+      "id": "prop:lh_cantina_table_b",
+      "kind": "table",
+      "x": 4955.0,
+      "z": -815.0,
+      "footprint": { "shape": "circle", "radius_m": 1.4 },
+      "color": "#7A5230",
+      "near_building": "poi:lost_heaven_cantina",
+      "z_draw": 6
+    },
+    {
+      "id": "prop:lh_bank_steps",
+      "kind": "barrier",
+      "x": 4679.0,
+      "z": -775.0,
+      "footprint": { "shape": "rect", "w_m": 10.0, "h_m": 3.0, "yaw_deg": 0.0 },
+      "color": "#8A7048",
+      "near_building": "poi:lost_heaven_bank",
+      "z_draw": 4
+    },
+    {
+      "id": "prop:lh_market_stall_c",
+      "kind": "stall",
+      "x": 4810.0,
+      "z": -900.0,
+      "footprint": { "shape": "rect", "w_m": 5.0, "h_m": 3.5, "yaw_deg": 0.0 },
+      "color": "#B87333",
+      "near_building": "poi:lost_heaven_market",
+      "z_draw": 5
+    },
+    {
+      "id": "prop:lh_starport_lamp",
+      "kind": "lamp",
+      "x": 4825.0,
+      "z": -795.0,
+      "footprint": { "shape": "circle", "radius_m": 1.0 },
+      "color": "#59BFD9",
+      "near_building": "poi:lost_heaven_starport",
+      "z_draw": 8
+    }
+  ]
+}

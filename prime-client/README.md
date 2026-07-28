@@ -1,6 +1,9 @@
-# Prime Client — Godot 4 Top-Down (M2) + pont SOE (M3+)
+# Prime Client — Godot 4 Top-Down (client joueur LBG)
 
-Client 2D pour Core3 Prime. Projet dans `new_mmo/prime-client/`.
+**Seul client produit** à terme — pas de client retail SWG sur le poste joueur.  
+Vision : [`docs/CLIENT_ONLY_GODOT.md`](docs/CLIENT_ONLY_GODOT.md) · Connexion : [`docs/HUMAN_PLAYER.md`](docs/HUMAN_PLAYER.md)
+
+Client 2D pour **Core3 Prime** (serveur persiste ; wire SOE interne remplacé par `lbg-ws/2` au jalon M12).
 
 ## Jalons
 
@@ -66,17 +69,12 @@ IA_BRIDGE_DIR=/opt/lbg-new-mmo-clean/MMOCoreORB/bin/ia_bridge \
   python3 tools/zone_observer/zone_feed.py --watch --interval 1
 ```
 
-## M3 — Mirroring retail ↔ 2D (snapshots → UDP)
+## M3 — Mirroring sidecar (legacy debug)
 
-**Prérequis** : Teome (ou autre) connecté sur `lbgemu` ; sidecar Core3 écrit `ia_bridge/player_snapshots.json`.
+> **Deprecated** pour le produit : ne pas utiliser le client retail `lbgemu`.  
+> Chemin joueur = **Option B** dans `docs/HUMAN_PLAYER.md` (`soe_handshake --play`).
 
-Terminal 1 — Godot :
-
-```bash
-godot4 --path /home/sdesh/projects/new_mmo/prime-client
-```
-
-Terminal 2 — pont M3 :
+Snapshots → UDP pour observer des bots **sans** login SOE (Lia/Nix/Mira via `ia_bridge`) :
 
 ```bash
 cd ~/projects/LBG_IA_MMORPG/LBG_IA_MMO
@@ -84,7 +82,7 @@ IA_BRIDGE_DIR=/opt/lbg-new-mmo-clean/MMOCoreORB/bin/ia_bridge \
   bash tools/zone_observer/run_m3_mirror.sh
 ```
 
-**Validation** : bouger Teome sur le retail → rond **bleu** bouge sur la carte 2D en < 2 s.
+Terminal 1 : Godot (`godot4 --path …/prime-client`).
 
 ## M4 — Carte Tatooine
 

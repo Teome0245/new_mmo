@@ -1,0 +1,7 @@
+{
+  "display_name": "Voyageur",
+  "auto_focus_on_connect": true,
+  "hide_npc_nameplates_on_play": true,
+  "play_zoom": 2.2,
+  "notes": "Packet UDP cn depuis prime_controller / SOE bridge → NetworkBridge:12345"
+}

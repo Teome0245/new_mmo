@@ -1,4 +1,4 @@
-# SpriteRegistry — résout kind/name → texture PNG + teinte joueur
+# sprite_registry.gd — résout kind/name/rôle → texture + teinte joueur
 extends RefCounted
 class_name SpriteRegistry
 
@@ -11,23 +11,23 @@ static var _last_sprite_key: String = ""
 static func last_sprite_key() -> String:
 	return _last_sprite_key
 
-static func resolve_texture(kind: String, entity_name: String = "") -> Texture2D:
+static func resolve_texture(kind: String, entity_name: String = "", entity_key: String = "") -> Texture2D:
 	_ensure_loaded()
-	var key := _resolve_sprite_key(kind, entity_name)
+	var role := _resolve_role(entity_key, entity_name)
+	var key := _resolve_sprite_key(kind, entity_name, role)
 	_last_sprite_key = key
 	if key == "":
 		return null
 	var sprites: Dictionary = _manifest.get("sprites", {})
 	var path := str(sprites.get(key, ""))
 	if path == "" or not ResourceLoader.exists(path):
-		# Fallback : sprite générique bot si joueur nommé
 		if kind == "player":
-			var fallback := str(sprites.get("player_bot", ""))
-			if fallback != "" and ResourceLoader.exists(fallback):
-				path = fallback
-			else:
-				return null
-		else:
+			for fallback_key in ["player_human", "player_bot"]:
+				var fb := str(sprites.get(fallback_key, ""))
+				if fb != "" and ResourceLoader.exists(fb):
+					path = fb
+					break
+		if path == "" or not ResourceLoader.exists(path):
 			return null
 	return load(path) as Texture2D
 
@@ -48,22 +48,42 @@ static func resolve_tint(kind: String, entity_name: String = "") -> Color:
 
 static func display_px() -> float:
 	_ensure_loaded()
-	return float(_manifest.get("display_px", 32.0))
+	var override := float(_manifest.get("display_px", 0.0))
+	if override > 0.0:
+		return override
+	return Projection3D2D.entity_token_px()
 
 static func resolve_scale_multiplier(sprite_key: String) -> float:
 	_ensure_loaded()
 	var scales: Dictionary = _manifest.get("sprite_scales", {})
 	return float(scales.get(sprite_key, 1.0))
 
-static func _resolve_sprite_key(kind: String, entity_name: String) -> String:
+static func _resolve_role(entity_key: String, entity_name: String) -> String:
+	if entity_key == "" and entity_name == "":
+		return ""
+	var anchor := NpcAnchorResolver.resolve(entity_key, entity_name)
+	return str(anchor.get("role", ""))
+
+static func _resolve_sprite_key(kind: String, entity_name: String, role: String) -> String:
 	var rules: Array = _manifest.get("rules", [])
 	var name_l := entity_name.to_lower().strip_edges()
+	var role_l := role.to_lower().strip_edges()
 	for rule_v in rules:
 		if not rule_v is Dictionary:
 			continue
 		var rule: Dictionary = rule_v
 		if str(rule.get("kind", "")) != kind:
 			continue
+		var roles: Variant = rule.get("role_match", [])
+		if roles is Array and not (roles as Array).is_empty():
+			var role_hit := false
+			if role_l != "":
+				for rv in roles as Array:
+					if role_l == str(rv).to_lower():
+						role_hit = true
+						break
+			if not role_hit:
+				continue
 		var exact := str(rule.get("name_exact", "")).strip_edges().to_lower()
 		if exact != "":
 			if name_l != exact and not name_l.contains(exact):

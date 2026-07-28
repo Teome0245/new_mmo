@@ -7,6 +7,7 @@ const DETAIL_ZOOM_MIN: float = 1.75
 
 @export var visible_pois: bool = true
 @export var show_detail_pois: bool = false
+@export var suppress_hub_pois: bool = true
 @export var camera_path: NodePath = NodePath("../../Camera2D")
 
 var _pois: Array = []
@@ -32,6 +33,12 @@ func _cam_zoom() -> float:
 	var cam := get_node_or_null(camera_path) as Camera2D
 	return cam.zoom.x if cam else 1.0
 
+func _is_hub_duplicate_poi(p: Dictionary) -> bool:
+	if str(p.get("group", "")) == "lost_heaven":
+		return str(p.get("id", "")) != "poi:lost_heaven"
+	var pid := str(p.get("id", ""))
+	return pid.begins_with("poi:lost_heaven_")
+
 func _show_detail() -> bool:
 	return show_detail_pois or _cam_zoom() >= DETAIL_ZOOM_MIN
 
@@ -45,6 +52,8 @@ func _draw() -> void:
 			continue
 		var p: Dictionary = item
 		if bool(p.get("deprecated", false)):
+			continue
+		if suppress_hub_pois and _is_hub_duplicate_poi(p):
 			continue
 		var essential := bool(p.get("essential", false))
 		if bool(p.get("detail", false)) and not essential and not detail:

@@ -13,8 +13,9 @@
       "label": "Port shuttle",
       "x": 4809.0,
       "z": -802.0,
-      "size_m": 36.0,
-      "essential": true
+      "size_m": 47.6,
+      "essential": true,
+      "size_from_gabarit_me": true
     },
     {
       "id": "poi:lost_heaven_cantina",
@@ -115,5 +116,17 @@
       "size_m": 64.0,
       "essential": false
     }
-  ]
+  ],
+  "gabarit_mos_eisley": {
+    "applied_at": "2026-07-27T11:54:52.833100+00:00",
+    "me_center": {
+      "x": 3520.0,
+      "z": -4800.0
+    },
+    "lh_anchor": {
+      "x": 4749.0,
+      "z": -737.0
+    },
+    "buildings_resized": 1
+  }
 }
