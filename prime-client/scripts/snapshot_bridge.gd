@@ -14,6 +14,14 @@ var _live: bool = false
 var _demo_loaded: bool = false
 var _live_until: float = 0.0
 var _managed_oids: Dictionary = {}
+var _paused: bool = false
+
+
+func set_paused(paused: bool) -> void:
+	_paused = paused
+	if paused:
+		print("[SnapshotBridge] pause (WS live)")
+
 
 func _ready() -> void:
 	_em = get_node_or_null(entity_manager_path) as EntityManager
@@ -45,7 +53,7 @@ func _is_network_live() -> bool:
 	return Time.get_ticks_msec() / 1000.0 < _live_until
 
 func _poll(_delta: float) -> void:
-	if _em == null:
+	if _em == null or _paused:
 		return
 	if _is_network_live():
 		return
@@ -165,14 +173,18 @@ func _apply_payload(payload: Dictionary) -> void:
 		seen_oids[oid] = true
 		var label := str(e.get("name", eid))
 		var col := _color_for_kind(kind, label)
-		var pos := Vector3(
+		var raw := Vector3(
 			float(e.get("x", 0.0)),
 			float(e.get("y", 0.0)),
 			float(e.get("z", 0.0))
 		)
+		var pos := Projection3D2D.normalize_core3_pos(raw)
 		if _em.get_entity(oid) == null:
-			_em.spawn(oid, pos, col, label, kind)
+			_em.spawn(oid, pos, col, label, kind, eid)
 		else:
+			var existing := _em.get_entity(oid)
+			if existing and existing.entity_key == "":
+				existing.set_entity_key(eid)
 			_em.move(oid, pos)
 	for oid: Variant in _managed_oids.keys():
 		if not seen_oids.has(oid):

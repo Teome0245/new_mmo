@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://75bqii2dln3s"
-valid=false
+uid="uid://bttovrkds3abx"
+path="res://.godot/imported/tatooine.png-6126b95e1a993a791fd0494c775e1a2f.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/maps/tatooine.svg"
+source_file="res://assets/maps/tatooine.png"
+dest_files=["res://.godot/imported/tatooine.png-6126b95e1a993a791fd0494c775e1a2f.ctex"]
 
 [params]
 
@@ -34,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

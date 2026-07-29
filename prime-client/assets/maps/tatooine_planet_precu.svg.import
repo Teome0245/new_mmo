@@ -2,12 +2,12 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://75bqii2dln3s"
+uid="uid://d3anvsssgb72s"
 valid=false
 
 [deps]
 
-source_file="res://assets/maps/tatooine.svg"
+source_file="res://assets/maps/tatooine_planet_precu.svg"
 
 [params]
 

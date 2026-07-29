@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://75bqii2dln3s"
-valid=false
+uid="uid://imus5cbot7et"
+path="res://.godot/imported/npc_merchant.svg-14a6a08739d820b4ac06f992b5c5bd56.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/maps/tatooine.svg"
+source_file="res://assets/sprites/units/npc_merchant.svg"
+dest_files=["res://.godot/imported/npc_merchant.svg-14a6a08739d820b4ac06f992b5c5bd56.ctex"]
 
 [params]
 

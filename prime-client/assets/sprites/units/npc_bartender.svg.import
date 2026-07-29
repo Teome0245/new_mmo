@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://75bqii2dln3s"
-valid=false
+uid="uid://oacq1q4b52ce"
+path="res://.godot/imported/npc_bartender.svg-4f352d23bdbec9fc48a833f30e3b5ee6.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/maps/tatooine.svg"
+source_file="res://assets/sprites/units/npc_bartender.svg"
+dest_files=["res://.godot/imported/npc_bartender.svg-4f352d23bdbec9fc48a833f30e3b5ee6.ctex"]
 
 [params]
 

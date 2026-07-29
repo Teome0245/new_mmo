@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://75bqii2dln3s"
-valid=false
+uid="uid://d152yokferlwu"
+path="res://.godot/imported/tatooine_satellite.webp-7656fa6663964b643e86f110af14b0da.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/maps/tatooine.svg"
+source_file="res://assets/maps/tatooine_satellite.webp"
+dest_files=["res://.godot/imported/tatooine_satellite.webp-7656fa6663964b643e86f110af14b0da.ctex"]
 
 [params]
 
@@ -34,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

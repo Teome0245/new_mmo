@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://75bqii2dln3s"
-valid=false
+uid="uid://by4qc8dn0u1pt"
+path="res://.godot/imported/player_human.svg-abfb6bfeb5d560098c10b2e477c7ad55.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/maps/tatooine.svg"
+source_file="res://assets/sprites/units/player_human.svg"
+dest_files=["res://.godot/imported/player_human.svg-abfb6bfeb5d560098c10b2e477c7ad55.ctex"]
 
 [params]
 

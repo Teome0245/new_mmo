@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://75bqii2dln3s"
-valid=false
+uid="uid://cw7w3mkujt5no"
+path="res://.godot/imported/npc_trainer.svg-61b9efe99571d2082fe2b246ac03ddc4.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/maps/tatooine.svg"
+source_file="res://assets/sprites/units/npc_trainer.svg"
+dest_files=["res://.godot/imported/npc_trainer.svg-61b9efe99571d2082fe2b246ac03ddc4.ctex"]
 
 [params]
 

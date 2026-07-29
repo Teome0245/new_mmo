@@ -50,16 +50,13 @@ func _dispatch(text: String) -> void:
 	match t:
 		"mv":
 			if _em:
-				_em.move(oid, Vector3(float(d.get("x", 0.0)),
-						float(d.get("y", 0.0)),
-						float(d.get("z", 0.0))))
+				_em.move(oid, _pos_from_packet(d))
 		"sp":
 			if _em:
-				_em.spawn(oid, Vector3(float(d.get("x", 0.0)),
-						float(d.get("y", 0.0)),
-						float(d.get("z", 0.0))),
-					_parse_color(str(d.get("c", "npc"))),
-					str(d.get("l", "")))
+				var kind := str(d.get("kind", "object"))
+				var label := str(d.get("l", ""))
+				var sid := str(d.get("sid", ""))
+				_em.spawn(oid, _pos_from_packet(d), _parse_color(str(d.get("c", "npc"))), label, kind, sid)
 		"dp":
 			if _em:
 				_em.despawn(oid)
@@ -75,19 +72,20 @@ func _dispatch(text: String) -> void:
 				_em.clear()
 				_demo_cleared = true
 			var cn_oid := _resolve_oid(d)
-			var x   := float(d.get("x", 0.0))
-			var y   := float(d.get("y", 0.0))
-			var z   := float(d.get("z", 0.0))
+			var pos := _pos_from_packet(d)
 			var pl  := str(d.get("pl", ""))
 			if _em and cn_oid != 0:
-				_em.spawn(cn_oid, Vector3(x, y, z), Entity.COLOR_PLAYER_OFFICIAL, "YOU")
+				_em.spawn(
+					cn_oid, pos, Entity.COLOR_PLAYER_OFFICIAL,
+					_human_display_name(), "player", "player:human"
+				)
 			var pc: PlayerController = get_node_or_null("../PlayerController") as PlayerController
 			if pc and cn_oid != 0:
 				pc.set_player_id(cn_oid)
-				pc.send_initial_position(x, y, z)
+				pc.send_initial_position(pos.x, pos.y, pos.z)
 			if _main and _main.has_method("on_player_connected"):
 				_main.on_player_connected(cn_oid, pl)
-			print("[Bridge] Joueur connecté: 0x%016x  planet=%s  pos=(%.1f,%.1f,%.1f)" % [cn_oid, pl, x, y, z])
+			print("[Bridge] Joueur connecté: 0x%016x  planet=%s  pos=(%.1f,%.1f,%.1f)" % [cn_oid, pl, pos.x, pos.y, pos.z])
 		# M5 — Etat locomotion → StateLabel
 		"ls":
 			if _main and _main.has_method("on_locomotion_state"):
@@ -123,6 +121,24 @@ func _resolve_oid(d: Dictionary) -> int:
 	if d.has("sid"):
 		return _hash_id(str(d.get("sid", "")))
 	return int(d.get("id", 0))
+
+func _pos_from_packet(d: Dictionary) -> Vector3:
+	return Projection3D2D.normalize_core3_pos(Vector3(
+		float(d.get("x", 0.0)),
+		float(d.get("y", 0.0)),
+		float(d.get("z", 0.0))
+	))
+
+func _human_display_name() -> String:
+	var path := "res://config/human_player.json"
+	if not FileAccess.file_exists(path):
+		return "YOU"
+	var f := FileAccess.open(path, FileAccess.READ)
+	var raw: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if raw is Dictionary:
+		return str((raw as Dictionary).get("display_name", "YOU"))
+	return "YOU"
 
 func _hash_id(s: String) -> int:
 	return Crc32Util.entity_oid(s)

@@ -2,12 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://75bqii2dln3s"
-valid=false
+uid="uid://be6pcg1g148os"
+path="res://.godot/imported/npc_guide.svg-5d3bd7d1bbd6506b43681997d3832734.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
-source_file="res://assets/maps/tatooine.svg"
+source_file="res://assets/sprites/units/npc_guide.svg"
+dest_files=["res://.godot/imported/npc_guide.svg-5d3bd7d1bbd6506b43681997d3832734.ctex"]
 
 [params]
 
