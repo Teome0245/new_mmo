@@ -36,6 +36,7 @@ var _ws_handoff_busy: bool = false
 var _last_ws_url: String = ""
 var _local_character_name: String = ""
 var _dialogue_demo_expression_index: int = 0
+var _selected_entity_id: int = 0
 
 const FOCUS_BOTS: Array[String] = ["Nix", "Lia", "Mira"]
 const FOCUS_ZOOM: Vector2 = Vector2(2.0, 2.0)
@@ -469,11 +470,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_zoom_camera(-CAM_ZOOM_STEP)
 		elif event.button_index == MOUSE_BUTTON_LEFT:
-			var picked := entity_manager.pick_interactable_at_screen(event.position)
-			if picked:
-				_open_npc_dialogue(picked)
-			elif _dialogue_panel and _dialogue_panel.visible:
-				_dialogue_panel.hide_portrait()
+			_handle_world_left_click(_canvas_mouse_pos())
+			get_viewport().set_input_as_handled()
 	if event is InputEventKey and event.pressed:
 		match event.keycode:
 			KEY_F1:
@@ -659,6 +657,57 @@ func _zoom_camera(step: float) -> void:
 		return
 	camera.zoom = (camera.zoom + Vector2(step, step)).clamp(CAM_ZOOM_MIN, CAM_ZOOM_MAX)
 
+
+func _canvas_mouse_pos() -> Vector2:
+	return get_global_mouse_position()
+
+
+func _screen_click_to_core3(canvas_pos: Vector2) -> Vector3:
+	return Projection3D2D.from_screen(canvas_pos)
+
+
+func _set_selected_entity(oid: int) -> void:
+	if _selected_entity_id == oid:
+		return
+	if _selected_entity_id != 0:
+		var prev := entity_manager.get_entity(_selected_entity_id)
+		if prev:
+			prev.set_selected(false)
+	_selected_entity_id = oid
+	if oid == 0:
+		return
+	var e := entity_manager.get_entity(oid)
+	if e:
+		e.set_selected(true)
+
+
+func _handle_world_left_click(screen_pos: Vector2) -> void:
+	var picked := entity_manager.pick_entity_at_screen(screen_pos)
+	if picked:
+		_set_selected_entity(picked.object_id)
+		if picked.is_interactable():
+			_open_npc_dialogue(picked)
+		elif _dialogue_panel and _dialogue_panel.visible and not picked.is_interactable():
+			_dialogue_panel.hide_portrait()
+		return
+	_set_selected_entity(0)
+	if _dialogue_panel and _dialogue_panel.visible:
+		_dialogue_panel.hide_portrait()
+	var pc: PlayerController = get_node_or_null("PlayerController") as PlayerController
+	if pc == null or not pc.enabled or not _play_mode:
+		return
+	var core3 := _screen_click_to_core3(screen_pos)
+	var pid := pc.get_player_id()
+	if pid <= 0:
+		return
+	var me := entity_manager.get_entity(pid)
+	if me:
+		core3.y = me.core3_pos.y
+		var zones := get_node_or_null("WorldMap/ZoneLayers") as ZoneLayers
+		if zones:
+			core3 = zones.clamp_move(me.core3_pos, core3)
+	pc.request_move_to(core3.x, core3.z)
+
 # ---------------------------------------------------------------------------
 # UI debug
 # ---------------------------------------------------------------------------
@@ -678,7 +727,7 @@ func _update_info() -> void:
 		)
 	if stats_label:
 		if _play_mode:
-			stats_label.text = "[ZQSD] move  [T/I] panels  [L] labels  [1-0] hotbar  [Ctrl+M] carte"
+			stats_label.text = "[ZQSD/flèches] move · clic sol · [T/I] panels · [L] labels · [1-0] hotbar"
 		else:
 			stats_label.text = "[H/R] hub  [M] minimap  [Ctrl+M] carte  [L] labels  [1-0] hotbar"
 

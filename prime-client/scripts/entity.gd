@@ -19,6 +19,10 @@ var _idle_phase: float = 0.0
 var _anchor: Dictionary = {}
 var _visual_home: Vector3 = Vector3.ZERO
 var _use_visual_override: bool = false
+## Orientation affichée (tip du triangle) : 0 = nord écran (+Core3 Z).
+var facing_angle: float = 0.0
+var _selected: bool = false
+var _last_patrol_offset: Vector3 = Vector3.ZERO
 
 const COLOR_PLAYER_OFFICIAL := Color(0.2, 0.4, 1.0, 1.0)
 const COLOR_PLAYER_BOT      := Color(0.0, 0.9, 0.4, 1.0)
@@ -33,10 +37,12 @@ func set_entity_key(key: String) -> void:
 	_refresh_appearance()
 
 func set_core3_position(pos: Vector3) -> void:
+	var prev := core3_pos
 	core3_pos     = pos
 	height_offset = Projection3D2D.height_offset(pos.y)
 	if not _use_visual_override:
 		_visual_home = Vector3(pos.x, pos.y, pos.z)
+	update_facing_from_move(prev, pos)
 	_refresh_screen_pos()
 	_update_sprite_offset()
 	queue_redraw()
@@ -51,6 +57,30 @@ func set_kind(k: String) -> void:
 
 func set_color(c: Color) -> void:
 	color = c
+	queue_redraw()
+
+
+func set_selected(selected: bool) -> void:
+	_selected = selected
+	queue_redraw()
+
+
+func update_facing_from_move(from: Vector3, to: Vector3) -> void:
+	var dx := to.x - from.x
+	var dz := to.z - from.z
+	if dx * dx + dz * dz < 0.0025:
+		return
+	# Core3 X est → écran X ; Core3 Z nord → écran -Y
+	var screen_dir := Vector2(dx, -dz).normalized()
+	facing_angle = screen_dir.angle() + PI * 0.5
+	queue_redraw()
+
+
+func set_facing_from_direction(dir: Vector3) -> void:
+	if dir.length_squared() < 0.0001:
+		return
+	var screen_dir := Vector2(dir.x, -dir.z).normalized()
+	facing_angle = screen_dir.angle() + PI * 0.5
 	queue_redraw()
 
 func set_label(text: String) -> void:
@@ -123,8 +153,15 @@ func _wants_ambient() -> bool:
 func _process(delta: float) -> void:
 	if not _wants_ambient():
 		return
+	var prev_patrol := _patrol_offset_m()
 	_idle_phase += delta
 	_refresh_screen_pos()
+	var cur_patrol := _patrol_offset_m()
+	if kind == "npc":
+		var vel := cur_patrol - prev_patrol
+		if vel.length_squared() > 1.0e-8:
+			set_facing_from_direction(Vector3(vel.x, 0.0, vel.z))
+	_last_patrol_offset = cur_patrol
 	_update_sprite_offset()
 	queue_redraw()
 
@@ -242,6 +279,9 @@ func _draw() -> void:
 			draw_arc(draw_pos, token_r * 1.05, 0.0, TAU, 32, color.lightened(0.2), 1.8, true)
 	elif tri_style and (kind == "player" or kind == "npc"):
 		_draw_marker_triangle(draw_pos, color, kind == "player")
+		if _selected:
+			draw_arc(draw_pos, 14.0, 0.0, TAU, 32, Color(1.0, 0.92, 0.35, 0.98), 2.5, true)
+			draw_arc(draw_pos, 17.0, 0.0, TAU, 32, Color(1.0, 1.0, 1.0, 0.35), 1.0, true)
 	elif kind == "player":
 		draw_circle(draw_pos + Vector2(1, 1), radius, Color(0, 0, 0, 0.3))
 		draw_circle(draw_pos, radius, color)
@@ -270,9 +310,12 @@ func _draw() -> void:
 		)
 
 func _draw_marker_triangle(center: Vector2, col: Color, is_player: bool) -> void:
-	var tip := center + Vector2(0.0, -7.0)
-	var p1 := center + Vector2(-5.0, 4.0)
-	var p2 := center + Vector2(5.0, 4.0)
+	var tip := Vector2(0.0, -7.0)
+	var p1 := Vector2(-5.0, 4.0)
+	var p2 := Vector2(5.0, 4.0)
+	tip = tip.rotated(facing_angle) + center
+	p1 = p1.rotated(facing_angle) + center
+	p2 = p2.rotated(facing_angle) + center
 	var fill := col if is_player else Color(1.0, 1.0, 1.0, 0.92)
 	draw_colored_polygon(PackedVector2Array([tip, p1, p2]), fill)
 	draw_polyline(PackedVector2Array([tip, p1, p2, tip]), col.darkened(0.2), 1.2, true)
@@ -287,12 +330,21 @@ func _ellipse_points(center: Vector2, rx: float, ry: float, segments: int) -> Pa
 func is_interactable() -> bool:
 	return kind == "npc"
 
+
+func is_local_player(local_id: int) -> bool:
+	return kind == "player" and object_id == local_id and object_id != 0
+
 func screen_anchor() -> Vector2:
-	return get_global_transform_with_canvas().origin + Vector2(0.0, height_offset)
+	# Centre visuel du marqueur (triangle / sprite), repère monde 2D + caméra.
+	return to_global(Vector2(0.0, height_offset))
+
 
 func hit_test_screen(mouse_pos: Vector2) -> bool:
-	if not is_interactable() or not visible:
+	if not visible:
 		return false
+	if kind != "npc" and kind != "player":
+		return false
+	var tri := MapTextureLoader.entity_marker_style() == "triangle"
 	var token_px := SpriteRegistry.display_px()
-	var radius_px := maxf(18.0, token_px * 0.55)
-	return screen_anchor().distance_to(mouse_pos) <= radius_px
+	var radius_px := maxf(28.0, token_px * 0.85) if tri else maxf(18.0, token_px * 0.55)
+	return screen_anchor().distance_squared_to(mouse_pos) <= radius_px * radius_px

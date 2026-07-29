@@ -1,14 +1,15 @@
 {
-  "launchpadVersion": "2.0.5",
+  "launchpadVersion": "2.1.0",
   "statusApiUrl": "http://192.168.0.245:8792/api/servers",
-  "patchServerUrl": "http://192.168.0.245:8080",
-  "patchServerUrlNas": "",
+  "patchServerUrl": "http://192.168.0.246:8080",
+  "patchServerUrlNas": "http://192.168.0.245:8080",
   "diskSpaceWarningGb": 40,
   "defaultProfileId": "prime",
   "profiles": [
     {
       "id": "precu",
       "label": "SWGEmu PreCu (original)",
+      "clientKind": "swgemu",
       "gameDir": "J:\\swgemu\\StarWarsGalaxies",
       "gameExe": "SWGEmu.exe",
       "configFile": "swgemu.cfg",
@@ -24,11 +25,19 @@
     },
     {
       "id": "prime",
-      "label": "LBG Prime",
-      "gameDir": "J:\\swgemu\\clients\\prime-lbg",
-      "gameExe": "lbgemu.exe",
-      "configFile": "swgemu.cfg",
+      "label": "LBG Prime (Godot)",
+      "clientKind": "godot",
+      "gameDir": "\\\\wsl.localhost\\Ubuntu\\home\\sdesh\\projects\\new_mmo\\prime-client",
+      "gameExe": "J:\\mmmorpg\\Godot_v4.6.1-stable_win64\\Godot_v4.6.1-stable_win64.exe",
+      "configFile": "",
       "patchChannel": "prime",
+      "skipPatch": true,
+      "godotPatchEnabled": true,
+      "godotFullscreen": true,
+      "launchArgs": [
+        "--path",
+        "\\\\wsl.localhost\\Ubuntu\\home\\sdesh\\projects\\new_mmo\\prime-client"
+      ],
       "servers": [
         {
           "id": "prime",

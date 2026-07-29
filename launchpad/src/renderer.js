@@ -53,15 +53,18 @@ const pathHint = document.getElementById('path-settings-hint');
 function applyPathFields(cfg) {
   if (!cfg) return;
   activeProfileId = cfg.profileId || activeProfileId;
-  if (gameDirInput) gameDirInput.value = cfg.gameDir || '';
+  const godot = cfg.clientKind === 'godot';
+  if (gameDirInput) {
+    gameDirInput.value = cfg.gameDir || '';
+    gameDirInput.placeholder = godot ? 'Dossier projet prime-client' : 'Dossier swgemu.cfg';
+  }
   if (gameExeInput) {
     gameExeInput.value = cfg.gameExeRelative || cfg.gameExe || '';
-    const base = cfg.profileId === 'prime' ? 'lbgemu.exe' : 'SWGEmu.exe';
+    const base = godot ? 'Godot_v4.6-stable_win64.exe' : 'SWGEmu.exe';
     gameExeInput.placeholder = cfg.gameExeConfigured ? '' : `Par défaut : ${base}`;
   }
   if (gameExeLabel) {
-    gameExeLabel.textContent =
-      cfg.profileId === 'prime' ? 'lbgemu.exe' : 'SWGEmu.exe';
+    gameExeLabel.textContent = godot ? 'Godot (éditeur / export)' : 'SWGEmu.exe';
   }
   if (profileLabel) {
     profileLabel.textContent = cfg.profileLabel

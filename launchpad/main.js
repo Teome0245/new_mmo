@@ -6,11 +6,35 @@ const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
 
-const LAUNCHPAD_VERSION = '2.0.5';
+const LAUNCHPAD_VERSION = '2.1.0';
 const STATUS_API_TIMEOUT_MS = 12000;
 const STATUS_API_FAIL_THRESHOLD = 2;
 const PRECU_HOST_LAN = '192.168.0.245';
 const PRIME_HOST_LAN = '192.168.0.246';
+
+/** Chemins Windows — Godot 4.6 + prime-client (WSL = source de vérité si dispo). */
+const DEFAULT_GODOT_EXE = 'J:\\mmmorpg\\Godot_v4.6.1-stable_win64\\Godot_v4.6.1-stable_win64.exe';
+const WSL_PRIME_CLIENT_DIR =
+  '\\\\wsl.localhost\\Ubuntu\\home\\sdesh\\projects\\new_mmo\\prime-client';
+const J_PRIME_CLIENT_DIR = 'J:\\swgemu\\clients\\prime-client';
+
+function resolvePrimeClientDir() {
+  const fromEnv = (process.env.LBG_PRIME_CLIENT_DIR || '').trim();
+  if (fromEnv && fs.existsSync(fromEnv)) {
+    return fromEnv;
+  }
+  if (process.platform === 'win32') {
+    if (fs.existsSync(WSL_PRIME_CLIENT_DIR)) {
+      return WSL_PRIME_CLIENT_DIR;
+    }
+    if (fs.existsSync(J_PRIME_CLIENT_DIR)) {
+      return J_PRIME_CLIENT_DIR;
+    }
+  }
+  return J_PRIME_CLIENT_DIR;
+}
+
+const DEFAULT_PRIME_CLIENT_DIR = resolvePrimeClientDir();
 
 /** Dossier de l’exe (config.json à côté du .exe). */
 function appRoot() {
@@ -42,11 +66,16 @@ function defaultProfiles() {
     },
     {
       id: 'prime',
-      label: 'LBG Prime',
-      gameDir: path.join(swgRoot, 'clients', 'prime-lbg'),
-      gameExe: 'lbgemu.exe',
-      configFile: 'swgemu.cfg',
+      label: 'LBG Prime (Godot)',
+      clientKind: 'godot',
+      gameDir: DEFAULT_PRIME_CLIENT_DIR,
+      gameExe: DEFAULT_GODOT_EXE,
+      configFile: '',
       patchChannel: 'prime',
+      skipPatch: true,
+      godotPatchEnabled: true,
+      godotFullscreen: true,
+      launchArgs: ['--path', DEFAULT_PRIME_CLIENT_DIR],
       servers: [
         { id: 'prime', label: 'LBG MMO Serveur Prime', ip: PRIME_HOST_LAN, loginPort: 44553 },
       ],
@@ -58,8 +87,8 @@ function defaultConfig() {
   return {
     launchpadVersion: LAUNCHPAD_VERSION,
     statusApiUrl: 'http://192.168.0.245:8792/api/servers',
-    patchServerUrl: 'http://192.168.0.245:8080',
-    patchServerUrlNas: '',
+    patchServerUrl: 'http://192.168.0.246:8080',
+    patchServerUrlNas: 'http://192.168.0.245:8080',
     diskSpaceWarningGb: 40,
     defaultProfileId: 'prime',
     profiles: defaultProfiles(),
@@ -106,15 +135,100 @@ function migrateLegacyConfig(legacy) {
       },
       {
         id: 'prime',
-        label: 'LBG Prime',
-        gameDir: path.join(swgRoot, 'clients', 'prime-lbg'),
-        gameExe: 'lbgemu.exe',
-        configFile: legacy.configFile || 'swgemu.cfg',
+        label: 'LBG Prime (Godot)',
+        clientKind: 'godot',
+        gameDir: DEFAULT_PRIME_CLIENT_DIR,
+        gameExe: DEFAULT_GODOT_EXE,
+        configFile: '',
         patchChannel: 'prime',
+        skipPatch: true,
+        godotPatchEnabled: true,
+        godotFullscreen: true,
+        launchArgs: ['--path', DEFAULT_PRIME_CLIENT_DIR],
         servers: [primeServer],
       },
     ],
   };
+}
+
+function isGodotProfile(profile) {
+  if (!profile) return false;
+  if (String(profile.clientKind || '').toLowerCase() === 'godot') return true;
+  const exe = String(profile.gameExe || '').toLowerCase();
+  return exe.includes('godot') || exe.endsWith('primeclient.exe') || exe.endsWith('prime-client.exe');
+}
+
+/** Migre un profil Prime encore pointé sur lbgemu.exe → Godot prime-client. */
+function migratePrimeClientPath(cfg) {
+  const dir = resolvePrimeClientDir();
+  let changed = false;
+  for (const profile of cfg.profiles || []) {
+    if (profile.id !== 'prime') continue;
+    if (profile.gameDir !== dir) {
+      profile.gameDir = dir;
+      changed = true;
+    }
+    if (profile.gameExe && !fs.existsSync(profile.gameExe)) {
+      profile.gameExe = DEFAULT_GODOT_EXE;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+function migratePrimeToGodot(cfg) {
+  let changed = false;
+  for (const profile of cfg.profiles || []) {
+    if (profile.id !== 'prime') continue;
+    const exe = String(profile.gameExe || '').toLowerCase();
+    const stillRetail =
+      exe.includes('lbgemu') ||
+      String(profile.gameDir || '').toLowerCase().includes('prime-lbg');
+    if (!stillRetail && isGodotProfile(profile)) continue;
+    profile.label = 'LBG Prime (Godot)';
+    profile.clientKind = 'godot';
+    profile.gameDir = DEFAULT_PRIME_CLIENT_DIR;
+    profile.gameExe = DEFAULT_GODOT_EXE;
+    profile.configFile = '';
+    profile.patchChannel = '';
+    profile.skipPatch = true;
+    if (profile.godotFullscreen == null) {
+      profile.godotFullscreen = true;
+    }
+    changed = true;
+  }
+  return changed;
+}
+
+function ensureGodotPatchDefaults(cfg) {
+  let changed = false;
+  for (const profile of cfg.profiles || []) {
+    if (profile.id !== 'prime' || !isGodotProfile(profile)) continue;
+    if (!profile.patchChannel) {
+      profile.patchChannel = 'prime';
+      changed = true;
+    }
+    if (profile.godotPatchEnabled == null) {
+      profile.godotPatchEnabled = true;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+function ensureGodotFullscreenDefault(cfg) {
+  let changed = false;
+  for (const profile of cfg.profiles || []) {
+    if (profile.id !== 'prime' || !isGodotProfile(profile)) continue;
+    if (profile.godotFullscreen != null) continue;
+    const args = Array.isArray(profile.launchArgs) ? profile.launchArgs : [];
+    profile.godotFullscreen = args.some((a) => String(a).trim() === '--fullscreen');
+    if (!profile.godotFullscreen) {
+      profile.godotFullscreen = true;
+    }
+    changed = true;
+  }
+  return changed;
 }
 
 function migratePrecuHost246(cfg) {
@@ -175,6 +289,10 @@ function normalizeConfig(raw) {
       })),
     };
     migratePrecuHost246(normalized);
+    migratePrimeToGodot(normalized);
+    migratePrimeClientPath(normalized);
+    ensureGodotFullscreenDefault(normalized);
+    ensureGodotPatchDefaults(normalized);
     return normalized;
   }
   if (raw.gameDir || (Array.isArray(raw.servers) && raw.servers.length > 0)) {
@@ -203,11 +321,19 @@ function loadConfig() {
     if (fs.existsSync(cfgPath)) {
       const raw = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
       const normalized = normalizeConfig(raw);
-      const migrated = migratePrecuHost246(normalized);
+      const migratedHost = migratePrecuHost246(normalized);
+      const migratedGodot = migratePrimeToGodot(normalized);
+      const migratedPath = migratePrimeClientPath(normalized);
+      const migratedFs = ensureGodotFullscreenDefault(normalized);
+      const migratedPatch = ensureGodotPatchDefaults(normalized);
       if (
         !raw.profiles ||
         raw.launchpadVersion !== LAUNCHPAD_VERSION ||
-        migrated
+        migratedHost ||
+        migratedGodot ||
+        migratedPath ||
+        migratedFs ||
+        migratedPatch
       ) {
         saveConfig(normalized);
       }
@@ -263,17 +389,44 @@ function resolveGameExe(profile) {
   return path.join(profile.gameDir, raw);
 }
 
+function resolveLaunchArgs(profile) {
+  if (isGodotProfile(profile)) {
+    const args = ['--path', profile.gameDir];
+    if (profile.godotFullscreen) {
+      args.push('--fullscreen');
+    }
+    if (Array.isArray(profile.launchArgsExtra)) {
+      for (const a of profile.launchArgsExtra) {
+        const s = String(a).trim();
+        if (s) args.push(s);
+      }
+    }
+    return args;
+  }
+  if (Array.isArray(profile.launchArgs) && profile.launchArgs.length > 0) {
+    return profile.launchArgs.map(String);
+  }
+  const cfgName = profile.configFile || 'swgemu.cfg';
+  return ['-s', cfgName];
+}
+
 function profilePathPayload(profile) {
   const gameExe = resolveGameExe(profile);
+  const godot = isGodotProfile(profile);
   return {
     profileId: profile.id,
     profileLabel: profile.label,
+    clientKind: godot ? 'godot' : 'swgemu',
     gameDir: profile.gameDir,
     gameExe,
     gameExeRelative: profile.gameExe || path.basename(gameExe),
     gameExeConfigured: Boolean((profile.gameExe || '').trim()),
-    configFile: profile.configFile || 'swgemu.cfg',
-    patchChannel: profile.patchChannel || profile.id,
+    configFile: godot ? '' : profile.configFile || 'swgemu.cfg',
+    patchChannel: profile.patchChannel || (godot ? 'prime' : profile.id),
+    skipPatch: Boolean(profile.skipPatch),
+    godotPatchEnabled: profile.godotPatchEnabled !== false,
+    godotFullscreen: Boolean(profile.godotFullscreen),
+    launchArgs: resolveLaunchArgs(profile),
   };
 }
 
@@ -308,9 +461,19 @@ function getFreeBytesForPath(targetPath) {
 
 function diskSpaceStatus() {
   const requiredGb = Number(config.diskSpaceWarningGb) || 40;
-  const dirs = config.profiles.map((p) => p.gameDir).filter(Boolean);
+  // Godot seul : ~1 Go suffit ; PreCu retail : gros install
+  const dirs = config.profiles
+    .filter((p) => !isGodotProfile(p))
+    .map((p) => p.gameDir)
+    .filter(Boolean);
+  const checkDirs =
+    dirs.length > 0
+      ? dirs
+      : config.profiles.map((p) => p.gameDir).filter(Boolean);
+  const effectiveRequired =
+    dirs.length === 0 ? Math.min(requiredGb, 5) : requiredGb;
   let minFree = null;
-  for (const dir of dirs) {
+  for (const dir of checkDirs) {
     const free = getFreeBytesForPath(dir);
     if (free != null && (minFree == null || free < minFree)) {
       minFree = free;
@@ -318,15 +481,15 @@ function diskSpaceStatus() {
   }
   const freeGb = minFree != null ? minFree / (1024 ** 3) : null;
   return {
-    requiredGb,
+    requiredGb: effectiveRequired,
     freeGb: freeGb != null ? Math.round(freeGb * 10) / 10 : null,
-    ok: freeGb == null ? true : freeGb >= requiredGb,
+    ok: freeGb == null ? true : freeGb >= effectiveRequired,
     message:
       freeGb == null
-        ? `Prévoir environ ${requiredGb} Go libres pour les deux installations client complètes.`
-        : freeGb >= requiredGb
-          ? `Espace disque OK (${freeGb} Go libres, ${requiredGb} Go recommandés pour 2 clients).`
-          : `Attention : ${freeGb} Go libres — environ ${requiredGb} Go recommandés (2 installations complètes).`,
+        ? `Prévoir environ ${effectiveRequired} Go libres.`
+        : freeGb >= effectiveRequired
+          ? `Espace disque OK (${freeGb} Go libres, ${effectiveRequired} Go recommandés).`
+          : `Attention : ${freeGb} Go libres — environ ${effectiveRequired} Go recommandés.`,
   };
 }
 
@@ -586,6 +749,14 @@ ipcMain.on('save-path-settings', (event, payload) => {
   if (typeof payload.gameExe === 'string') {
     profile.gameExe = normalizeGameExeForSave(profile.gameDir, payload.gameExe);
   }
+  if (isGodotProfile(profile)) {
+    profile.clientKind = 'godot';
+    profile.skipPatch = true;
+    profile.configFile = '';
+    if (payload.godotFullscreen != null) {
+      profile.godotFullscreen = Boolean(payload.godotFullscreen);
+    }
+  }
   try {
     saveConfig(config);
     const updated = profilePathPayload(profile);
@@ -611,12 +782,19 @@ ipcMain.on('browse-game-dir', async (event) => {
 
 ipcMain.on('browse-game-exe', async (event) => {
   const profile = getActiveProfile();
-  const defaultExe = resolveGameExe(profile);
+  const godot = isGodotProfile(profile);
   const result = await dialog.showOpenDialog(mainWindow, {
-    title: `Exécutable — ${profile.label}`,
+    title: godot
+      ? `Godot / Prime Client — ${profile.label}`
+      : `Exécutable — ${profile.label}`,
     properties: ['openFile'],
     defaultPath: profile.gameDir,
-    filters: [{ name: 'Client SWG', extensions: ['exe'] }],
+    filters: godot
+      ? [
+          { name: 'Godot / Client', extensions: ['exe'] },
+          { name: 'Tous', extensions: ['*'] },
+        ]
+      : [{ name: 'Client SWG', extensions: ['exe'] }],
   });
   if (result.canceled || !result.filePaths?.[0]) {
     event.reply('browse-result', { canceled: true });
@@ -626,7 +804,7 @@ ipcMain.on('browse-game-exe', async (event) => {
   event.reply('browse-result', {
     canceled: false,
     gameExe: picked,
-    gameDir: path.dirname(picked),
+    gameDir: godot ? profile.gameDir : path.dirname(picked),
   });
 });
 
@@ -634,6 +812,7 @@ ipcMain.on('launch-game', (event, keepOpen) => {
   const server = getServer(selectedServerId);
   const profile = getActiveProfile();
   const gamePath = resolveGameExe(profile);
+  const godot = isGodotProfile(profile);
   const cfgName = profile.configFile || 'swgemu.cfg';
   const cfgPath = path.join(profile.gameDir, cfgName);
   const disk = diskSpaceStatus();
@@ -658,11 +837,22 @@ ipcMain.on('launch-game', (event, keepOpen) => {
   if (!fs.existsSync(gamePath)) {
     event.reply('launch-status', {
       error: true,
-      message: `${path.basename(gamePath)} introuvable : ${gamePath}`,
+      message: godot
+        ? `Godot introuvable : ${gamePath}\nInstallez Godot 4.6 ou réglez le chemin (Emplacement du client).`
+        : `${path.basename(gamePath)} introuvable : ${gamePath}`,
     });
     return;
   }
-  if (!fs.existsSync(cfgPath)) {
+  if (godot) {
+    const projectFile = path.join(profile.gameDir, 'project.godot');
+    if (!fs.existsSync(projectFile)) {
+      event.reply('launch-status', {
+        error: true,
+        message: `Projet Godot introuvable : ${projectFile}\nCopiez prime-client vers ce dossier ou changez « Dossier jeu ».`,
+      });
+      return;
+    }
+  } else if (!fs.existsSync(cfgPath)) {
     event.reply('launch-status', {
       error: true,
       message: `Fichier config introuvable : ${cfgPath}`,
@@ -671,10 +861,22 @@ ipcMain.on('launch-game', (event, keepOpen) => {
   }
 
   try {
-    patchLoginConfig(profile, server);
-    const args = ['-s', cfgName];
+    if (!godot) {
+      patchLoginConfig(profile, server);
+    }
+    const args = resolveLaunchArgs(profile);
+    const cwd = godot ? profile.gameDir : profile.gameDir;
+    try {
+      fs.writeFileSync(
+        path.join(appRoot(), 'last-launch.log'),
+        `${new Date().toISOString()}\nexe=${gamePath}\ncwd=${cwd}\nargs=${args.join(' ')}\n`,
+        'utf8',
+      );
+    } catch (_) {
+      /* ignore */
+    }
     const gameProcess = spawn(gamePath, args, {
-      cwd: profile.gameDir,
+      cwd,
       detached: false,
       stdio: 'ignore',
     });
@@ -688,16 +890,21 @@ ipcMain.on('launch-game', (event, keepOpen) => {
       if (code !== null && code !== 0) {
         event.reply('launch-status', {
           error: true,
-          message: `Client arrêté immédiatement (code ${code}). Voir docs/troubleshoot_lbgemu_launch.md — script recover_prime_client.ps1`,
+          message: godot
+            ? `Godot arrêté immédiatement (code ${code}). Vérifiez Godot 4.6 + project.godot.`
+            : `Client arrêté immédiatement (code ${code}). Voir docs/troubleshoot_lbgemu_launch.md — script recover_prime_client.ps1`,
         });
       }
     });
     setTimeout(() => {
       if (gameProcess.exitCode === null && gameProcess.signalCode === null) {
         gameProcess.unref();
+        const target = godot
+          ? `Godot prime-client → gateway ${PRIME_HOST_LAN}:8765 / :50000`
+          : `${profile.label} → ${server.label} (${server.ip}:${server.loginPort})`;
         event.reply('launch-status', {
           error: false,
-          message: `${profile.label} → ${server.label} (${server.ip}:${server.loginPort})`,
+          message: target,
         });
         if (!keepOpen) app.quit();
       }
@@ -749,9 +956,167 @@ function downloadFile(url, dest, onProgress) {
   });
 }
 
+function readLocalBuildInfo(gameDir) {
+  const p = path.join(gameDir, 'assets', 'build_info.json');
+  if (!fs.existsSync(p)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (err) {
+    console.warn('build_info local:', err.message);
+    return null;
+  }
+}
+
+async function fetchRemoteBuildInfo(channel) {
+  const base = (config.patchServerUrl || '').replace(/\/$/, '');
+  const urls = [
+    `${base}/patches/${channel}/build_info.json`,
+    `${base}/patches/${channel}/assets/build_info.json`,
+  ];
+  let lastErr;
+  for (const url of urls) {
+    try {
+      return await httpGetJson(url, 8000);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('build_info distant introuvable');
+}
+
+async function checkGodotClientUpdates(profile) {
+  const channel = profile.patchChannel || 'prime';
+  if (profile.godotPatchEnabled === false) {
+    mainWindow.webContents.send('patch-status', {
+      status: 'ready',
+      message: 'Mises à jour Prime désactivées (godotPatchEnabled=false).',
+    });
+    return;
+  }
+
+  mainWindow.webContents.send('patch-status', {
+    status: 'checking',
+    message: `Prime — comparaison version locale / référence (${channel})…`,
+  });
+
+  const targetDir = profile.gameDir;
+  const localBuild = readLocalBuildInfo(targetDir);
+  const localStamp = localBuild?.synced_at || '(aucun build_info.json local)';
+
+  let remoteBuild = null;
+  let manifest = null;
+  let remoteErr = '';
+
+  try {
+    remoteBuild = await fetchRemoteBuildInfo(channel);
+  } catch (err) {
+    remoteErr = err.message;
+  }
+
+  try {
+    manifest = await fetchPatchManifest(channel);
+  } catch (err) {
+    mainWindow.webContents.send('patch-status', {
+      status: 'error',
+      message:
+        `Manifeste Prime indisponible (${err.message}).\n` +
+        `Local : ${localStamp}\n` +
+        `Publiez : python3 tools/generate_prime_patch_manifest.py puis déployez sur ${config.patchServerUrl}/patches/${channel}/`,
+    });
+    return;
+  }
+
+  const remoteStamp =
+    remoteBuild?.synced_at || manifest.version || manifest.synced_at || '(manifeste sans date)';
+  const sameStamp = localStamp !== '(aucun build_info.json local)' && localStamp === remoteStamp;
+
+  const filesToUpdate = [];
+  for (const file of manifest.files || []) {
+    const filePath = path.join(targetDir, file.name);
+    const localHash = await getFileHash(filePath);
+    if (localHash !== file.hash) filesToUpdate.push(file);
+  }
+
+  const patchBase = (config.patchServerUrl || '').replace(/\/$/, '');
+
+  if (filesToUpdate.length === 0) {
+    mainWindow.webContents.send('patch-status', {
+      status: 'ready',
+      message:
+        `Prime à jour (${filesToUpdate.length} diff). Local ${localStamp} · référence ${remoteStamp}` +
+        (sameStamp ? ' ✓' : ' (fichiers OK, tampon différent)'),
+    });
+    return;
+  }
+
+  mainWindow.webContents.send('patch-status', {
+    status: 'patching',
+    message: `Prime — ${filesToUpdate.length} fichier(s) à mettre à jour (local ${localStamp} → ref ${remoteStamp})…`,
+  });
+
+  try {
+    for (const file of filesToUpdate) {
+      const filePath = path.join(targetDir, file.name);
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      const urls = [
+        `${patchBase}/patches/${channel}/${file.name}`,
+        `${patchBase}/${file.name}`,
+      ];
+      let ok = false;
+      let lastDlErr;
+      for (const url of urls) {
+        try {
+          await downloadFile(url, filePath, (percent) => {
+            mainWindow.webContents.send('patch-progress', {
+              percent,
+              file: file.name,
+            });
+          });
+          ok = true;
+          break;
+        } catch (err) {
+          lastDlErr = err;
+        }
+      }
+      if (!ok) throw lastDlErr || new Error(`Échec ${file.name}`);
+    }
+
+    if (remoteBuild) {
+      const biPath = path.join(targetDir, 'assets', 'build_info.json');
+      const biDir = path.dirname(biPath);
+      if (!fs.existsSync(biDir)) fs.mkdirSync(biDir, { recursive: true });
+      fs.writeFileSync(biPath, `${JSON.stringify(remoteBuild, null, 2)}\n`, 'utf8');
+    }
+
+    mainWindow.webContents.send('patch-status', {
+      status: 'ready',
+      message: `Prime mis à jour — ${filesToUpdate.length} fichier(s). Référence ${remoteStamp}.`,
+    });
+  } catch (error) {
+    mainWindow.webContents.send('patch-status', {
+      status: 'error',
+      message: `Échec patch Prime : ${error.message}\nLocal ${localStamp} · ref ${remoteStamp}${remoteErr ? `\n(${remoteErr})` : ''}`,
+    });
+  }
+}
+
 async function checkUpdates() {
   const profile = getActiveProfile();
   const channel = profile.patchChannel || profile.id;
+
+  if (isGodotProfile(profile)) {
+    await checkGodotClientUpdates(profile);
+    return;
+  }
+
+  if (profile.skipPatch) {
+    mainWindow.webContents.send('patch-status', {
+      status: 'ready',
+      message: 'Patches désactivés pour ce profil.',
+    });
+    return;
+  }
 
   mainWindow.webContents.send('patch-status', {
     status: 'checking',

@@ -75,15 +75,27 @@ func get_all_entities() -> Array:
 	return _entities.values()
 
 func pick_interactable_at_screen(mouse_pos: Vector2) -> Entity:
+	return _pick_at_screen(mouse_pos, true)
+
+
+func pick_entity_at_screen(mouse_pos: Vector2) -> Entity:
+	return _pick_at_screen(mouse_pos, false)
+
+
+func _pick_at_screen(mouse_pos: Vector2, npc_only: bool) -> Entity:
 	var best: Entity = null
 	var best_dist := 1.0e12
 	for entity_v in _entities.values():
 		var entity := entity_v as Entity
-		if entity == null or not entity.is_interactable():
+		if entity == null:
 			continue
-		if not entity.hit_test_screen(mouse_pos):
+		if npc_only and not entity.is_interactable():
+			continue
+		if not npc_only and entity.kind != "npc" and entity.kind != "player":
 			continue
 		var d := entity.screen_anchor().distance_squared_to(mouse_pos)
+		if not entity.hit_test_screen(mouse_pos):
+			continue
 		if d < best_dist:
 			best_dist = d
 			best = entity

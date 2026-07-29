@@ -58,7 +58,7 @@ func _draw_canyons(rect: Rect2) -> void:
 
 func _draw_dune_bands(rect: Rect2) -> void:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = _SEED ^ 0xDUNE
+	rng.seed = _SEED ^ 0xD00E
 	for _i in range(18):
 		var y := rng.randf_range(rect.position.y, rect.end.y)
 		var x0 := rect.position.x

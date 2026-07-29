@@ -20,7 +20,7 @@ var _refresh_btn: Button
 
 func _ready() -> void:
 	visible = panel_visible
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	_apply_mouse_filter()
 	_apply_modal_style()
 	_ensure_ui()
 	_http = HTTPRequest.new()
@@ -103,9 +103,15 @@ func _apply_modal_style() -> void:
 	sb.shadow_size = 8
 	add_theme_stylebox_override("panel", sb)
 
+
+func _apply_mouse_filter() -> void:
+	mouse_filter = Control.MOUSE_FILTER_STOP if panel_visible else Control.MOUSE_FILTER_IGNORE
+
+
 func toggle() -> void:
 	panel_visible = not panel_visible
 	visible = panel_visible
+	_apply_mouse_filter()
 	if panel_visible:
 		_refresh_sidecar()
 
@@ -114,8 +120,10 @@ func _refresh_sidecar() -> void:
 	_paint_status()
 	var url := sidecar_base_url.rstrip("/") + "/v1/catalog/skills"
 	if _http.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
-		return
-	_http.request(url)
+		_http.cancel_request()
+	var err := _http.request(url, [], HTTPClient.METHOD_GET)
+	if err != OK:
+		_apply_local_mock("req_%d" % err)
 
 func _on_http_done(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
 	if result != HTTPRequest.RESULT_SUCCESS or code < 200 or code >= 300:
@@ -125,13 +133,20 @@ func _on_http_done(result: int, code: int, _headers: PackedStringArray, body: Pa
 		if typeof(parsed) == TYPE_DICTIONARY:
 			_skills = parsed.get("skills", [])
 			_schematics = parsed.get("schematics", [])
-			_status = "live — %d skills, %d schematics" % [_skills.size(), _schematics.size()]
+			var fb := bool(parsed.get("fallback", false))
+			_status = "live%s — %d skills, %d schematics" % [
+				" (fallback catalog)" if fb else "",
+				_skills.size(),
+				_schematics.size(),
+			]
 		else:
 			_status = "parse error"
+			_apply_local_mock("parse")
+			return
 	_paint_lists()
 
-func _apply_local_mock(code: int) -> void:
-	_status = "hors ligne (%s) · mock local" % code
+func _apply_local_mock(code: Variant) -> void:
+	_status = "hors ligne (%s) · mock local" % str(code)
 	_skills = [
 		{"name": "Prospecteur · rang 1"},
 		{"name": "Artisan de rue · rang 1"},

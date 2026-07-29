@@ -32,11 +32,14 @@ var _state: Dictionary = {
 }
 
 const _KEY_MAP: Dictionary = {
-	"fwd":   [KEY_Z, KEY_W],
-	"back":  [KEY_S],
-	"left":  [KEY_Q, KEY_A],
-	"right": [KEY_D],
+	"fwd":   [KEY_Z, KEY_W, KEY_UP],
+	"back":  [KEY_S, KEY_DOWN],
+	"left":  [KEY_Q, KEY_A, KEY_LEFT],
+	"right": [KEY_D, KEY_RIGHT],
 }
+
+const _CLICK_ARRIVE_M: float = 0.45
+var _click_target: Vector3 = Vector3.INF
 
 func _ready() -> void:
 	_load_play_cfg()
@@ -75,21 +78,27 @@ func _process(delta: float) -> void:
 	_handle_movement()
 	_handle_jump()
 	_apply_ws_locomotion(delta)
+	_apply_click_move(delta)
 	_follow_player()
 
 func _ws_open() -> bool:
 	return prefer_ws_move and _ws != null and _ws.has_method("is_open") and bool(_ws.is_open())
 
 func _handle_movement() -> void:
+	var any_key := false
 	for action in _KEY_MAP:
 		var pressed: bool = false
 		for k: int in _KEY_MAP[action]:
 			if Input.is_physical_key_pressed(k):
 				pressed = true
+		if pressed:
+			any_key = true
 		if pressed != _state[action]:
 			_state[action] = pressed
 			if not _ws_open():
 				_send({"t": action, "active": pressed})
+	if any_key:
+		_click_target = Vector3.INF
 	var running: bool = Input.is_physical_key_pressed(KEY_SHIFT)
 	if running != _state["run"]:
 		_state["run"] = running
@@ -97,7 +106,7 @@ func _handle_movement() -> void:
 			_send({"t": "run", "active": running})
 
 func _apply_ws_locomotion(delta: float) -> void:
-	if not _ws_open() or _player_id == 0 or _em == null:
+	if _player_id == 0 or _em == null:
 		return
 	var dir := Vector3.ZERO
 	# Écran : Z=haut, S=bas, Q=gauche, D=droite → Core3 X est / Z nord
@@ -126,13 +135,48 @@ func _apply_ws_locomotion(delta: float) -> void:
 	_move_accum += delta
 	if _move_accum >= 0.05:
 		_move_accum = 0.0
-		if _ws.has_method("send_move"):
+		if _ws_open() and _ws.has_method("send_move"):
 			_ws.send_move(core3)
+		if not _ws_open():
+			_send({"t": "pos", "x": core3.x, "y": core3.y, "z": core3.z})
 		_LastPos.save(_player_id, core3)
 
 
 func is_moving() -> bool:
-	return bool(_state["fwd"] or _state["back"] or _state["left"] or _state["right"])
+	return bool(_state["fwd"] or _state["back"] or _state["left"] or _state["right"]) or _click_target != Vector3.INF
+
+
+func set_click_target(core3: Vector3) -> void:
+	_click_target = core3
+
+
+func _apply_click_move(delta: float) -> void:
+	if _click_target == Vector3.INF or _player_id == 0 or _em == null:
+		return
+	var e: Entity = _em.get_entity(_player_id)
+	if e == null:
+		return
+	var to := _click_target - e.core3_pos
+	to.y = 0.0
+	var dist := to.length()
+	if dist < _CLICK_ARRIVE_M:
+		_click_target = Vector3.INF
+		return
+	var dir := to / dist
+	var speed := MOVE_SPEED * (RUN_MULT if _state["run"] else 1.0)
+	var step := minf(dist, speed * delta)
+	var core3 := e.core3_pos + dir * step
+	if _zones:
+		core3 = _zones.clamp_move(e.core3_pos, core3)
+	_em.move(_player_id, core3)
+	_move_accum += delta
+	if _move_accum >= 0.05:
+		_move_accum = 0.0
+		if _ws_open() and _ws.has_method("send_move"):
+			_ws.send_move(core3)
+		if not _ws_open():
+			_send({"t": "pos", "x": core3.x, "y": core3.y, "z": core3.z})
+		_LastPos.save(_player_id, core3)
 
 func _handle_jump() -> void:
 	if _ws_open():
@@ -167,10 +211,7 @@ func send_initial_position(x: float, y: float, z: float) -> void:
 	_send({"t": "pos", "x": x, "y": y, "z": z})
 
 func request_move_to(x: float, z: float) -> void:
-	if _ws_open() and _ws.has_method("send_move"):
-		_ws.send_move(Vector3(x, 0.0, z))
-		return
-	_send({"t": "goto", "x": x, "z": z, "y": 0.0})
+	set_click_target(Vector3(x, 0.0, z))
 
 func _exit_tree() -> void:
 	if not _ws_open():
